@@ -213,6 +213,50 @@
     line-height:1.6;
   }
 
+  /* ---------- Floating quick-add button ---------- */
+  .fab-add{
+    position:fixed; right:20px; bottom:24px; z-index:60;
+    width:56px; height:56px; border-radius:50%;
+    background:var(--brass); color:var(--ink); border:none;
+    font-size:28px; line-height:1; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 14px rgba(27,36,32,.28), 0 1px 3px rgba(27,36,32,.2);
+    cursor:pointer;
+  }
+  .fab-add:active{background:#96742F;}
+
+  /* ---------- Quick-add sheet ---------- */
+  .quick-add-overlay{
+    position:fixed; inset:0; background:rgba(27,36,32,.5); z-index:100;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .quick-add-overlay.open{display:flex;}
+  .quick-add-sheet{
+    background:var(--panel); width:100%; max-width:480px;
+    border-radius:16px 16px 0 0; box-shadow:0 -4px 24px rgba(27,36,32,.25);
+    padding:6px 18px 22px; max-height:88vh; overflow-y:auto;
+  }
+  .quick-add-grabber{width:38px; height:4px; background:var(--line); border-radius:99px; margin:8px auto 12px;}
+  .quick-add-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .quick-add-head h3{margin:0; font-family:'Fraunces',serif; font-weight:600; font-size:18px;}
+  .quick-add-close{
+    appearance:none; border:none; background:var(--paper-2); color:var(--ink-soft);
+    width:32px; height:32px; border-radius:50%; font-size:16px; cursor:pointer;
+  }
+  .quick-add-field{margin-bottom:12px;}
+  .quick-add-field label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:5px;}
+  .quick-add-field input, .quick-add-field select{
+    width:100%; padding:12px 13px; border:1px solid var(--line); border-radius:9px;
+    background:var(--white); font-size:16px; color:var(--ink); font-family:'Inter',sans-serif;
+  }
+  .quick-add-field input.money{font-family:'IBM Plex Mono',monospace; font-weight:600;}
+  .quick-add-field input:focus, .quick-add-field select:focus{outline:2px solid var(--brass); outline-offset:1px;}
+  .quick-add-submit{
+    width:100%; padding:14px 16px; border:none; border-radius:9px; margin-top:4px;
+    background:var(--ink); color:var(--paper); font-weight:700; font-size:15px; cursor:pointer;
+  }
+  .quick-add-submit:active{background:var(--brass); color:var(--ink);}
+
   /* ==========================================================
      MOBILE OPTIMIZATION (primary usage surface for this app)
      ========================================================== */
@@ -221,9 +265,16 @@
     header.masthead{padding:16px 14px 13px;}
     .masthead-title{font-size:20px;}
     .masthead-meta{font-size:11px; gap:8px 14px;}
-    .tabs-inner{padding:0 4px;}
-    .tab-btn{padding:12px 12px; font-size:12.5px;}
-    main{padding:14px 12px 70px;}
+    .tabs-inner{
+      padding:4px; flex-wrap:wrap; overflow-x:visible;
+      justify-content:center; gap:2px;
+    }
+    .tab-btn{
+      padding:10px 8px; font-size:12px; flex:1 1 auto; text-align:center;
+      border-bottom:3px solid transparent; border-radius:8px;
+    }
+    .tab-btn.active{background:var(--paper-2);}
+    main{padding:14px 12px 90px;}
     .section-title{font-size:18px;}
     .section-sub{font-size:13px; margin-bottom:14px;}
     .panel{padding:14px 15px; border-radius:12px;}
@@ -277,6 +328,8 @@
     .panel .btn{width:auto;}
 
     footer{font-size:11px; padding:16px 14px 28px;}
+
+    .fab-add{right:16px; bottom:20px; width:58px; height:58px; font-size:30px;}
   }
 
   @media (max-width: 380px){
@@ -305,6 +358,39 @@
   Dữ liệu được lưu trong trình duyệt này (localStorage) — không đồng bộ qua thiết bị khác.
   Hãy tải xuống JSON định kỳ ở tab <b>Dữ liệu</b> để sao lưu.
 </footer>
+
+<!-- Nút nổi thêm chi tiêu nhanh -->
+<button class="fab-add" id="fabAdd" title="Thêm chi tiêu nhanh" aria-label="Thêm chi tiêu nhanh">+</button>
+
+<!-- Bảng nhập nhanh -->
+<div class="quick-add-overlay" id="quickAddOverlay">
+  <div class="quick-add-sheet">
+    <div class="quick-add-grabber"></div>
+    <div class="quick-add-head">
+      <h3>Thêm chi tiêu nhanh</h3>
+      <button class="quick-add-close" id="quickAddClose" aria-label="Đóng">✕</button>
+    </div>
+    <form id="quickAddForm">
+      <div class="quick-add-field">
+        <label>Số tiền</label>
+        <input type="text" inputmode="numeric" class="money" data-type="money" id="qaSoTien" name="soTien" placeholder="0" autofocus required>
+      </div>
+      <div class="quick-add-field">
+        <label>Chi tiết</label>
+        <input type="text" id="qaChiTiet" name="chiTiet" placeholder="VD: Trà đá" required>
+      </div>
+      <div class="quick-add-field">
+        <label>Loại</label>
+        <select id="qaLoai" name="loai"></select>
+      </div>
+      <div class="quick-add-field">
+        <label>Ngày</label>
+        <input type="date" id="qaNgay" name="ngay" required>
+      </div>
+      <button type="submit" class="quick-add-submit">+ Lưu khoản chi</button>
+    </form>
+  </div>
+</div>
 
 <script>
 /* ==========================================================
@@ -375,11 +461,11 @@ function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); 
    ========================================================== */
 function fmt(n){
   n = Math.round(Number(n)||0);
-  return new Intl.NumberFormat('vi-VN').format(n) + ' đ';
+  return new Intl.NumberFormat('en-US').format(n) + ' đ';
 }
 function formatNumberPlain(n){
   n = Math.round(Number(n)||0);
-  return new Intl.NumberFormat('vi-VN').format(n);
+  return new Intl.NumberFormat('en-US').format(n);
 }
 function parseMoney(v){
   const n = parseInt(String(v).replace(/[^0-9-]/g,''),10);
@@ -457,8 +543,6 @@ function computeTCCN(){
   const chotraOutstanding = computeChoTraOutstanding();
   const chotraReceived = computeChoTraReceived();
   const ctAllTime = computeCTAllTime();
-  // Số dư hiện tại = số dư gốc bạn nhập lúc đầu, trừ đi các khoản đã cho vay chưa thu hồi
-  // và toàn bộ chi tiêu từ trước tới nay, cộng thêm các khoản chờ thu ĐÃ ĐƯỢC NHẬN.
   const soDuHienTai = (Number(tpbank)||0) + (Number(tienMat)||0) - chovayOutstanding - ctAllTime + chotraReceived;
   const soDuDayDu = soDuHienTai + chotraOutstanding;
   const buTru = soDuDayDu - tongDuNo - soTienCanSuDungThang;
@@ -583,7 +667,6 @@ function viewTCCN(){
   <div class="section-title">Tổng quan</div>
   <p class="section-sub">Bức tranh tài chính tổng hợp từ toàn bộ các sổ — tự động cập nhật theo tháng/năm bên dưới.</p>`;
 
-  // Khi mới dùng lần đầu: đưa "Thiết lập chung" lên trước để người dùng thấy ngay chỗ nhập số dư ban đầu.
   if(firstSetup){
     return header + setupBanner + setupPanel + cardsBlock + summaryChips;
   }
@@ -613,11 +696,11 @@ function viewCT(){
       </td>
       <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="ct" data-id="${r.id}" title="Xoá">✕</button></td>
     </tr>`;
-  }).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản chi nào${state.ui.ctChiThangNay?' trong tháng này':''}. Thêm khoản đầu tiên bên dưới.</td></tr>`;
+  }).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản chi nào${state.ui.ctChiThangNay?' trong tháng này':''}. Thêm khoản đầu tiên bằng nút + ở góc màn hình, hoặc bên dưới.</td></tr>`;
 
   return `
   <div class="section-title">Chi tiêu chi tiết</div>
-  <p class="section-sub">Ghi lại từng khoản chi hằng ngày — dùng để đối chiếu với ngân sách ở tab Ngân sách.</p>
+  <p class="section-sub">Ghi lại từng khoản chi hằng ngày — dùng để đối chiếu với ngân sách ở tab Ngân sách. Mẹo: bấm nút <b>+</b> ở góc màn hình để thêm nhanh từ bất kỳ đâu.</p>
 
   <div class="toolbar">
     <label><input type="checkbox" id="ctFilterToggle" ${state.ui.ctChiThangNay?'checked':''}> Chỉ xem tháng ${thang}/${nam}</label>
@@ -631,7 +714,7 @@ function viewCT(){
     <form class="add-form" data-add="ct">
       <input type="date" name="ngay" value="${todayStr()}" required>
       <input type="text" name="chiTiet" placeholder="Chi tiết (VD: Trà đá)" required>
-      <input type="text" inputmode="numeric" name="soTien" placeholder="Số tiền" required>
+      <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
       <select name="loai">${loaiOptions.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>
       <button type="submit">+ Thêm khoản chi</button>
     </form>
@@ -683,7 +766,7 @@ function viewBB(){
     </table>
     <form class="add-form" data-add="bb">
       <input type="text" name="loai" placeholder="Tên hạng mục" required>
-      <input type="text" inputmode="numeric" name="donGia" placeholder="Đơn giá" required>
+      <input type="text" inputmode="numeric" data-type="money" name="donGia" placeholder="Đơn giá" required>
       <select name="cheDo">
         <option value="coDinh">Số buổi cố định</option>
         <option value="auto">Ngày làm việc còn lại</option>
@@ -731,7 +814,7 @@ function viewChoVay(){
     <form class="add-form" data-add="chovay">
       <input type="date" name="ngay" value="${todayStr()}" required>
       <input type="text" name="khoan" placeholder="Cho ai vay / khoản gì" required>
-      <input type="text" inputmode="numeric" name="soTien" placeholder="Số tiền" required>
+      <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
       <button type="submit">+ Thêm khoản cho vay</button>
     </form>
   </div>
@@ -771,7 +854,7 @@ function viewChoTra(){
     <form class="add-form" data-add="chotra">
       <input type="date" name="ngay" value="${todayStr()}" required>
       <input type="text" name="khoan" placeholder="Khoản gì (VD: Lương tháng 8)" required>
-      <input type="text" inputmode="numeric" name="soTien" placeholder="Số tiền" required>
+      <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
       <button type="submit">+ Thêm khoản chờ thu</button>
     </form>
   </div>
@@ -846,7 +929,7 @@ function viewDuNo(){
       <input type="text" inputmode="numeric" name="thang" placeholder="Tháng" style="max-width:70px" value="${thang}" required>
       <input type="text" inputmode="numeric" name="nam" placeholder="Năm" style="max-width:90px" value="${nam}" required>
       <input type="text" name="ten" placeholder="Tên khoản nợ (VD: TPBank)" required>
-      <input type="text" inputmode="numeric" name="soTien" placeholder="Số tiền" required>
+      <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
       <input type="text" name="ghiChu" placeholder="Ghi chú">
       <button type="submit">+ Thêm khoản nợ</button>
     </form>
@@ -888,7 +971,7 @@ function viewVay(){
       <input type="text" inputmode="numeric" name="thang" placeholder="Tháng" style="max-width:70px" value="${state.meta.thang}" required>
       <input type="text" inputmode="numeric" name="nam" placeholder="Năm" style="max-width:90px" value="${state.meta.nam}" required>
       <input type="text" name="ten" placeholder="Tên khoản vay" required>
-      <input type="text" inputmode="numeric" name="soTien" placeholder="Số tiền" required>
+      <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
       <input type="text" name="ghiChu" placeholder="Ghi chú">
       <button type="submit">+ Thêm khoản vay</button>
     </form>
@@ -960,6 +1043,49 @@ function normalizeNewRow(arrName, obj){
 }
 
 /* ==========================================================
+   QUICK-ADD (nút + nổi thêm chi tiêu nhanh)
+   ========================================================== */
+function fillQuickAddLoaiOptions(){
+  const sel = document.getElementById('qaLoai');
+  const loaiOptions = state.bb.map(b=>b.loai);
+  sel.innerHTML = loaiOptions.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+}
+function openQuickAdd(){
+  fillQuickAddLoaiOptions();
+  document.getElementById('qaSoTien').value = '';
+  document.getElementById('qaChiTiet').value = '';
+  document.getElementById('qaNgay').value = todayStr();
+  document.getElementById('quickAddOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(()=>{ document.getElementById('qaSoTien').focus(); }, 50);
+}
+function closeQuickAdd(){
+  document.getElementById('quickAddOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('fabAdd').addEventListener('click', openQuickAdd);
+document.getElementById('quickAddClose').addEventListener('click', closeQuickAdd);
+document.getElementById('quickAddOverlay').addEventListener('click', e=>{
+  if(e.target.id==='quickAddOverlay') closeQuickAdd();
+});
+document.getElementById('quickAddForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const obj = {
+    id: uid(),
+    ngay: document.getElementById('qaNgay').value || todayStr(),
+    chiTiet: document.getElementById('qaChiTiet').value.trim(),
+    soTien: parseMoney(document.getElementById('qaSoTien').value),
+    loai: document.getElementById('qaLoai').value,
+  };
+  if(!obj.chiTiet || !obj.soTien){ return; }
+  state.ct.push(obj);
+  saveState();
+  closeQuickAdd();
+  renderAll();
+});
+
+/* ==========================================================
    EVENT DELEGATION
    ========================================================== */
 document.addEventListener('click', e=>{
@@ -994,6 +1120,21 @@ document.addEventListener('click', e=>{
       saveState(); renderAll();
     }
     return;
+  }
+});
+
+/* Định dạng số tiền có dấu phẩy ngay khi đang gõ (mọi ô có data-type="money") */
+document.addEventListener('input', e=>{
+  const el = e.target;
+  if(el.matches && el.matches('[data-type="money"]')){
+    const digits = el.value.replace(/[^0-9]/g,'');
+    const num = digits ? parseInt(digits,10) : 0;
+    const formatted = digits ? formatNumberPlain(num) : '';
+    if(el.value !== formatted){
+      el.value = formatted;
+      // đưa con trỏ về cuối ô (đơn giản, tránh lệch vị trí khi thêm dấu phẩy)
+      el.setSelectionRange(el.value.length, el.value.length);
+    }
   }
 });
 
