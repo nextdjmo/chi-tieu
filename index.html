@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1B2420">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Sổ Chi Tiêu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF0EA;
+    --paper-2:#E3E7DA;
+    --panel:#FAFAF5;
+    --ink:#1B2420;
+    --ink-soft:#57624F;
+    --ink-faint:#8B9481;
+    --brass:#A8843C;
+    --brass-soft:#DDCBA0;
+    --jade:#2F6B4F;
+    --jade-bg:#E1EEE3;
+    --rust:#A23B2B;
+    --rust-bg:#F5E1DC;
+    --line:#C9CDBE;
+    --line-soft:#DADDD0;
+    --white:#FFFFFF;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(27,36,32,.06), 0 4px 14px rgba(27,36,32,.05);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .mono{font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;}
+  .money{font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; white-space:nowrap;}
+  a{color:inherit;}
+
+  /* ---------- Header ---------- */
+  header.masthead{
+    background:var(--ink);
+    color:var(--paper);
+    padding:22px 20px 18px;
+    border-bottom:3px double var(--brass);
+  }
+  .masthead-inner{
+    max-width:1080px; margin:0 auto;
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  }
+  .masthead-title{
+    font-family:'Fraunces',serif; font-style:italic; font-weight:600;
+    font-size:28px; letter-spacing:.2px;
+  }
+  .masthead-title span{color:var(--brass);}
+  .masthead-meta{
+    font-family:'IBM Plex Mono',monospace; font-size:13px; color:#C7CFC0;
+    display:flex; gap:18px; flex-wrap:wrap;
+  }
+  .masthead-meta b{color:var(--paper); font-weight:600;}
+
+  /* ---------- Nav tabs ---------- */
+  nav.tabs{
+    background:var(--panel);
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+    box-shadow:var(--shadow);
+  }
+  .tabs-inner{
+    max-width:1080px; margin:0 auto;
+    display:flex; overflow-x:auto; scrollbar-width:thin;
+    -webkit-overflow-scrolling:touch;
+  }
+  .tab-btn{
+    appearance:none; border:none; background:transparent; cursor:pointer;
+    font-family:'Inter',sans-serif; font-weight:600; font-size:13.5px;
+    color:var(--ink-soft); padding:13px 16px; white-space:nowrap;
+    border-bottom:3px solid transparent;
+    transition:color .15s, border-color .15s;
+    flex-shrink:0;
+  }
+  .tab-btn:hover{color:var(--ink);}
+  .tab-btn.active{color:var(--ink); border-bottom-color:var(--brass);}
+
+  /* ---------- Main ---------- */
+  main{max-width:1080px; margin:0 auto; padding:22px 20px 60px;}
+  .section-title{
+    font-family:'Fraunces',serif; font-weight:600; font-size:20px; margin:0 0 4px;
+  }
+  .section-sub{color:var(--ink-soft); font-size:13.5px; margin:0 0 18px;}
+
+  .panel{
+    background:var(--panel); border:1px solid var(--line-soft); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:18px 20px; margin-bottom:20px;
+  }
+  .panel h3{margin:0 0 6px; font-family:'Fraunces',serif; font-weight:600; font-size:16px;}
+  .panel .hint{font-size:12.5px; color:var(--ink-soft); margin:0 0 14px; line-height:1.5;}
+
+  /* ---------- Cards (dashboard) ---------- */
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin-bottom:20px;}
+  .card{
+    background:var(--panel); border:1px solid var(--line-soft); border-radius:var(--radius);
+    padding:16px 18px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+  }
+  .card::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--brass-soft);}
+  .card.jade::before{background:var(--jade);}
+  .card.rust::before{background:var(--rust);}
+  .card.brass::before{background:var(--brass);}
+  .card-label{font-size:12px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;}
+  .card-value{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600; font-variant-numeric:tabular-nums;}
+  .card-value.jade{color:var(--jade);}
+  .card-value.rust{color:var(--rust);}
+
+  .banner{
+    border-radius:var(--radius); padding:13px 16px; font-size:13.5px; margin-bottom:20px;
+    display:flex; gap:10px; align-items:flex-start; border:1px solid; line-height:1.5;
+  }
+  .banner.warn{background:var(--rust-bg); border-color:#E3B7AC; color:#7A2A1D;}
+  .banner.ok{background:var(--jade-bg); border-color:#B6D6BE; color:#1F4B36;}
+  .banner.info{background:var(--paper-2); border-color:var(--line); color:var(--ink-soft);}
+  .banner.setup{background:var(--brass-soft); border-color:var(--brass); color:#4A3A16; border-width:1.5px;}
+
+  /* ---------- Meta form (Tổng quan settings) ---------- */
+  .meta-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px;}
+  .field label{display:block; font-size:12px; color:var(--ink-soft); margin-bottom:5px; font-weight:600;}
+  .field input, .field select{
+    width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:7px;
+    background:var(--white); font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--ink);
+  }
+  .field input:focus, .field select:focus{outline:2px solid var(--brass); outline-offset:1px;}
+
+  /* ---------- Tables ---------- */
+  .table-scroll{overflow-x:auto; border:1px solid var(--line-soft); border-radius:var(--radius); background:var(--panel);}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; min-width:640px;}
+  thead th{
+    text-align:left; padding:10px 12px; background:var(--paper-2); color:var(--ink-soft);
+    font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  tbody td{padding:7px 10px; border-bottom:1px solid var(--line-soft); vertical-align:middle;}
+  tbody tr:hover{background:#F4F5EF;}
+  tbody tr:last-child td{border-bottom:none;}
+  td.num, th.num{text-align:right;}
+  td.center, th.center{text-align:center;}
+
+  table input[type=text], table input[type=date], table input[type=number], table select{
+    width:100%; min-width:80px; padding:6px 8px; border:1px solid transparent; border-radius:6px;
+    background:transparent; font-family:'IBM Plex Mono',monospace; font-size:13.5px; color:var(--ink);
+  }
+  table input:hover, table select:hover{border-color:var(--line);}
+  table input:focus, table select:focus{border-color:var(--brass); background:var(--white); outline:none;}
+  table input.txt{font-family:'Inter',sans-serif;}
+
+  .pill{display:inline-block; padding:2px 10px; border-radius:999px; font-size:11.5px; font-weight:700; letter-spacing:.02em;}
+  .pill.ok{background:var(--jade-bg); color:var(--jade);}
+  .pill.warn{background:var(--rust-bg); color:var(--rust);}
+
+  .btn-icon{
+    appearance:none; border:none; background:transparent; cursor:pointer; color:var(--ink-faint);
+    font-size:16px; padding:6px 8px; border-radius:6px; line-height:1;
+  }
+  .btn-icon:hover{color:var(--rust); background:var(--rust-bg);}
+
+  /* ---------- Add-row form ---------- */
+  .add-form{
+    display:flex; flex-wrap:wrap; gap:8px; padding:14px; border-top:1px dashed var(--line);
+    background:var(--paper-2); border-radius:0 0 var(--radius) var(--radius);
+  }
+  .add-form input, .add-form select{
+    padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:var(--white);
+    font-family:'Inter',sans-serif; font-size:13.5px; flex:1 1 120px; min-width:100px;
+  }
+  .add-form button{
+    appearance:none; border:none; background:var(--ink); color:var(--paper); font-weight:600;
+    padding:9px 16px; border-radius:7px; cursor:pointer; font-size:13.5px; white-space:nowrap;
+  }
+  .add-form button:hover{background:var(--brass);}
+  .add-form button:active{background:var(--brass);}
+
+  .empty-state{
+    padding:26px 20px; text-align:center; color:var(--ink-soft); font-size:13.5px;
+  }
+
+  .summary-row{
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:14px;
+  }
+  .summary-chip{
+    background:var(--paper-2); border:1px solid var(--line-soft); border-radius:8px;
+    padding:9px 14px; font-size:12.5px; color:var(--ink-soft); flex:1 1 150px;
+  }
+  .summary-chip b{display:block; font-family:'IBM Plex Mono',monospace; font-size:16px; color:var(--ink); margin-top:2px; font-weight:600;}
+
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;}
+  .toolbar label{font-size:13px; color:var(--ink-soft); display:flex; gap:8px; align-items:center;}
+
+  .btn{
+    appearance:none; border:1px solid var(--line); background:var(--white); color:var(--ink);
+    padding:10px 16px; border-radius:8px; font-weight:600; font-size:13.5px; cursor:pointer;
+  }
+  .btn:hover{border-color:var(--brass); color:var(--brass);}
+  .btn.primary{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+  .btn.primary:hover{background:var(--brass); border-color:var(--brass); color:var(--ink);}
+  .btn.danger{color:var(--rust); border-color:var(--rust-bg);}
+  .btn.danger:hover{background:var(--rust-bg);}
+
+  footer{
+    text-align:center; color:var(--ink-faint); font-size:12px; padding:20px 16px 32px; border-top:1px solid var(--line-soft);
+    line-height:1.6;
+  }
+
+  /* ==========================================================
+     MOBILE OPTIMIZATION (primary usage surface for this app)
+     ========================================================== */
+  @media (max-width: 700px){
+    body{font-size:15px;}
+    header.masthead{padding:16px 14px 13px;}
+    .masthead-title{font-size:20px;}
+    .masthead-meta{font-size:11px; gap:8px 14px;}
+    .tabs-inner{padding:0 4px;}
+    .tab-btn{padding:12px 12px; font-size:12.5px;}
+    main{padding:14px 12px 70px;}
+    .section-title{font-size:18px;}
+    .section-sub{font-size:13px; margin-bottom:14px;}
+    .panel{padding:14px 15px; border-radius:12px;}
+
+    .cards{grid-template-columns:1fr 1fr; gap:9px;}
+    .card{padding:12px 13px; border-radius:10px;}
+    .card-label{font-size:10.5px; margin-bottom:5px;}
+    .card-value{font-size:17px;}
+
+    .meta-grid{grid-template-columns:1fr 1fr; gap:12px;}
+
+    .summary-row{gap:8px;}
+    .summary-chip{flex:1 1 45%;}
+
+    /* iOS zoom-on-focus prevention: inputs need >=16px font */
+    table input, table select, .add-form input, .add-form select, .field input, .field select{
+      font-size:16px;
+    }
+
+    /* Tables become stacked cards on narrow screens */
+    .table-scroll{overflow-x:visible; border:none; background:transparent; box-shadow:none;}
+    table{min-width:0; width:100%;}
+    thead{display:none;}
+    tbody{display:block;}
+    tbody tr{
+      display:block; background:var(--panel); border:1px solid var(--line-soft);
+      border-radius:12px; box-shadow:var(--shadow); margin-bottom:10px; padding:2px 0;
+    }
+    tbody tr:hover{background:var(--panel);}
+    tbody td{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:10px 13px; border-bottom:1px solid var(--line-soft); text-align:right;
+    }
+    tbody tr td:last-child{border-bottom:none;}
+    tbody td::before{
+      content:attr(data-label); font-size:11px; font-weight:700; color:var(--ink-soft);
+      text-transform:uppercase; letter-spacing:.03em; text-align:left; flex:0 0 auto;
+    }
+    tbody td.empty-state{display:block; text-align:center; padding:22px 16px;}
+    tbody td.empty-state::before{content:none;}
+    table input, table select{text-align:right; min-width:0; max-width:62%;}
+    table input.txt{text-align:right;}
+    table input[type=checkbox]{width:22px; height:22px; margin:0; flex:0 0 auto;}
+
+    .add-form{flex-direction:column; align-items:stretch; border-radius:12px; padding:14px 13px;}
+    .add-form input, .add-form select{flex:1 1 auto; width:100%; padding:11px 12px; font-size:16px;}
+    .add-form button{width:100%; padding:13px 16px; font-size:14.5px; margin-top:2px;}
+
+    .btn-icon{font-size:18px; padding:8px 10px;}
+    .btn{width:100%; padding:12px 16px;}
+    .panel .btn{width:auto;}
+
+    footer{font-size:11px; padding:16px 14px 28px;}
+  }
+
+  @media (max-width: 380px){
+    .cards{grid-template-columns:1fr 1fr;}
+    .card-value{font-size:15.5px;}
+    .meta-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="masthead-title">Sổ <span>Chi Tiêu</span></div>
+    <div class="masthead-meta" id="mastheadMeta"></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tabs-inner" id="tabsInner"></div>
+</nav>
+
+<main id="app"></main>
+
+<footer>
+  Dữ liệu được lưu trong trình duyệt này (localStorage) — không đồng bộ qua thiết bị khác.
+  Hãy tải xuống JSON định kỳ ở tab <b>Dữ liệu</b> để sao lưu.
+</footer>
+
+<script>
+/* ==========================================================
+   STATE
+   ========================================================== */
+const STORAGE_KEY = 'soChiTieu_v1';
+const TABS = [
+  {id:'tccn', label:'Tổng quan'},
+  {id:'ct', label:'Chi tiêu'},
+  {id:'bb', label:'Ngân sách'},
+  {id:'chovay', label:'Cho vay'},
+  {id:'chotra', label:'Chờ thu'},
+  {id:'duno', label:'Dư nợ'},
+  {id:'vay', label:'Vay'},
+  {id:'data', label:'Dữ liệu'},
+];
+const LOAI_MAC_DINH = [
+  {loai:'Ăn sáng', donGia:10000, cheDo:'auto', soBuoiCoDinh:0},
+  {loai:'Ăn trưa', donGia:40000, cheDo:'auto', soBuoiCoDinh:0},
+  {loai:'Người yêu', donGia:500000, cheDo:'coDinh', soBuoiCoDinh:6},
+  {loai:'Đổ xăng', donGia:120000, cheDo:'coDinh', soBuoiCoDinh:4},
+  {loai:'Youtube', donGia:105000, cheDo:'coDinh', soBuoiCoDinh:1},
+  {loai:'Điện thoại', donGia:160000, cheDo:'coDinh', soBuoiCoDinh:1},
+  {loai:'Linh tinh', donGia:300000, cheDo:'coDinh', soBuoiCoDinh:1},
+  {loai:'Nhậu', donGia:400000, cheDo:'coDinh', soBuoiCoDinh:3},
+];
+
+function uid(){ return 'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
+
+function defaultState(){
+  const now = new Date();
+  return {
+    meta:{
+      thang: now.getMonth()+1,
+      nam: now.getFullYear(),
+      ghiNhanNgay: todayStr(),
+      tpbank: 0,
+      tienMat: 0,
+    },
+    ct: [],
+    bb: LOAI_MAC_DINH.map(x=>({id:uid(), ...x})),
+    chovay: [],
+    chotra: [],
+    duno: [],
+    vay: [],
+    ui:{ currentTab:'tccn', ctChiThangNay:false, duNoThangKhac:null, duNoNamKhac:null },
+  };
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:false, duNoThangKhac:null, duNoNamKhac:null };
+      return parsed;
+    }
+  }catch(e){ console.warn('Không đọc được dữ liệu cũ, khởi tạo mới.', e); }
+  return defaultState();
+}
+
+let state = loadState();
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+/* ==========================================================
+   HELPERS
+   ========================================================== */
+function fmt(n){
+  n = Math.round(Number(n)||0);
+  return new Intl.NumberFormat('vi-VN').format(n) + ' đ';
+}
+function formatNumberPlain(n){
+  n = Math.round(Number(n)||0);
+  return new Intl.NumberFormat('vi-VN').format(n);
+}
+function parseMoney(v){
+  const n = parseInt(String(v).replace(/[^0-9-]/g,''),10);
+  return isNaN(n) ? 0 : n;
+}
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function inMonth(dateStr, month, year){
+  if(!dateStr) return false;
+  const d = new Date(dateStr+'T00:00:00');
+  if(isNaN(d)) return false;
+  return d.getFullYear()===year && (d.getMonth()+1)===month;
+}
+function weekdaysRemainingInMonth(year, month){
+  const now = new Date();
+  const isActualCurrent = (now.getFullYear()===year && (now.getMonth()+1)===month);
+  const startDay = isActualCurrent ? now.getDate() : 1;
+  const lastDay = new Date(year, month, 0).getDate();
+  let count=0;
+  for(let d=startDay; d<=lastDay; d++){
+    const dow = new Date(year, month-1, d).getDay();
+    if(dow>=1 && dow<=5) count++;
+  }
+  return count;
+}
+function tenThang(m,y){ return m+'/'+y; }
+function isFirstSetup(){
+  const m = state.meta;
+  return (Number(m.tpbank)||0)===0 && (Number(m.tienMat)||0)===0 &&
+    state.ct.length===0 && state.chovay.length===0 && state.chotra.length===0 &&
+    state.duno.length===0 && state.vay.length===0;
+}
+
+/* ==========================================================
+   COMPUTED (mirrors công thức trong Google Sheet)
+   ========================================================== */
+function computeBBRows(){
+  const {thang, nam} = state.meta;
+  return state.bb.map(row=>{
+    const soBuoi = row.cheDo==='auto' ? weekdaysRemainingInMonth(nam, thang) : (Number(row.soBuoiCoDinh)||0);
+    const tong = (Number(row.donGia)||0) * soBuoi;
+    const daChi = state.ct.reduce((s,c)=> s + (c.loai===row.loai && inMonth(c.ngay, thang, nam) ? (Number(c.soTien)||0) : 0), 0);
+    const conLai = tong - daChi;
+    return {...row, soBuoi, tong, daChi, conLai};
+  });
+}
+function computeBBSummary(rows){
+  const sumTong = rows.reduce((s,r)=>s+r.tong,0);
+  const sumConLai = rows.reduce((s,r)=>s+r.conLai,0);
+  const soTienDaDung = sumTong - sumConLai;
+  const vuotQua = rows.reduce((s,r)=> s + (r.conLai<0 ? -r.conLai : 0), 0);
+  const soTienThucTeCanSuDung = sumTong + vuotQua;
+  const soTienCan = sumConLai;
+  return { soTienDaDung, soTienTrongThangCan: sumTong, soTienThucTeCanSuDung, vuotQua, soTienCan };
+}
+function computeChoVayOutstanding(){ return state.chovay.reduce((s,r)=> s + (!r.daThu ? (Number(r.soTien)||0) : 0), 0); }
+function computeChoTraOutstanding(){ return state.chotra.reduce((s,r)=> s + (!r.daNhan ? (Number(r.soTien)||0) : 0), 0); }
+function computeChoTraReceived(){ return state.chotra.reduce((s,r)=> s + (r.daNhan ? (Number(r.soTien)||0) : 0), 0); }
+function computeDuNoThang(thang, nam){
+  return state.duno.reduce((s,r)=> s + ((Number(r.thang)===thang && Number(r.nam)===nam && !r.daHoanThanh) ? (Number(r.soTien)||0) : 0), 0);
+}
+function computeVayOutstanding(){ return state.vay.reduce((s,r)=> s + (!r.daHoanThanh ? (Number(r.soTien)||0) : 0), 0); }
+function computeCTAllTime(){ return state.ct.reduce((s,r)=> s + (Number(r.soTien)||0), 0); }
+
+function computeTCCN(){
+  const {thang, nam, tpbank, tienMat} = state.meta;
+  const bbRows = computeBBRows();
+  const bbSum = computeBBSummary(bbRows);
+  const duNoDUNO = computeDuNoThang(thang, nam);
+  const duNoVAY = computeVayOutstanding();
+  const tongDuNo = duNoDUNO + duNoVAY;
+  const soTienCanSuDungThang = bbSum.soTienCan;
+  const chovayOutstanding = computeChoVayOutstanding();
+  const chotraOutstanding = computeChoTraOutstanding();
+  const chotraReceived = computeChoTraReceived();
+  const ctAllTime = computeCTAllTime();
+  // Số dư hiện tại = số dư gốc bạn nhập lúc đầu, trừ đi các khoản đã cho vay chưa thu hồi
+  // và toàn bộ chi tiêu từ trước tới nay, cộng thêm các khoản chờ thu ĐÃ ĐƯỢC NHẬN.
+  const soDuHienTai = (Number(tpbank)||0) + (Number(tienMat)||0) - chovayOutstanding - ctAllTime + chotraReceived;
+  const soDuDayDu = soDuHienTai + chotraOutstanding;
+  const buTru = soDuDayDu - tongDuNo - soTienCanSuDungThang;
+  return { tongDuNo, soTienCanSuDungThang, soDuHienTai, soDuDayDu, buTru, duNoDUNO, duNoVAY, chovayOutstanding, chotraOutstanding, chotraReceived };
+}
+
+/* ==========================================================
+   RENDER: layout shell
+   ========================================================== */
+function renderMasthead(){
+  const el = document.getElementById('mastheadMeta');
+  el.innerHTML = `Tháng hiện tại <b>${state.meta.thang}/${state.meta.nam}</b> · Ghi nhận ngày <b>${state.meta.ghiNhanNgay ? state.meta.ghiNhanNgay.split('-').reverse().join('/') : '—'}</b>`;
+}
+function renderTabs(){
+  const el = document.getElementById('tabsInner');
+  el.innerHTML = TABS.map(t=>`<button class="tab-btn ${state.ui.currentTab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
+}
+function renderAll(){
+  renderMasthead();
+  renderTabs();
+  const app = document.getElementById('app');
+  switch(state.ui.currentTab){
+    case 'tccn': app.innerHTML = viewTCCN(); break;
+    case 'ct': app.innerHTML = viewCT(); break;
+    case 'bb': app.innerHTML = viewBB(); break;
+    case 'chovay': app.innerHTML = viewChoVay(); break;
+    case 'chotra': app.innerHTML = viewChoTra(); break;
+    case 'duno': app.innerHTML = viewDuNo(); break;
+    case 'vay': app.innerHTML = viewVay(); break;
+    case 'data': app.innerHTML = viewData(); break;
+  }
+}
+
+/* ==========================================================
+   VIEW: Tổng quan (TCCN)
+   ========================================================== */
+function viewSetupPanel(highlight){
+  return `
+  <div class="panel" id="setupPanel">
+    <h3>Thiết lập chung</h3>
+    <p class="hint">Nhập <b>số dư ban đầu</b> (tiền đang có trong TPBank và tiền mặt) ở đây <b>một lần duy nhất</b> khi bắt đầu dùng sổ. Sau đó bạn <b>không cần sửa lại hai ô này nữa</b> — số dư sẽ tự động cộng/trừ theo các khoản ở tab Chi tiêu, Cho vay, Chờ thu, Dư nợ và Vay.</p>
+    <div class="meta-grid">
+      <div class="field">
+        <label>Tháng hiện tại</label>
+        <select data-meta="thang" data-type="number">
+          ${Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}" ${m===state.meta.thang?'selected':''}>Tháng ${m}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Năm hiện tại</label>
+        <input type="number" data-meta="nam" data-type="number" value="${state.meta.nam}">
+      </div>
+      <div class="field">
+        <label>Ghi nhận ngày</label>
+        <input type="date" data-meta="ghiNhanNgay" data-type="text" value="${state.meta.ghiNhanNgay||''}">
+      </div>
+      <div class="field">
+        <label>Số dư TPBank (ban đầu)</label>
+        <input type="text" inputmode="numeric" data-meta="tpbank" data-type="money" value="${formatNumberPlain(state.meta.tpbank)}">
+      </div>
+      <div class="field">
+        <label>Tiền mặt (ban đầu)</label>
+        <input type="text" inputmode="numeric" data-meta="tienMat" data-type="money" value="${formatNumberPlain(state.meta.tienMat)}">
+      </div>
+    </div>
+  </div>`;
+}
+
+function viewTCCN(){
+  const t = computeTCCN();
+  const thieuHut = t.buTru < 0;
+  const firstSetup = isFirstSetup();
+
+  const setupBanner = firstSetup ? `
+  <div class="banner setup">👋 <div><b>Bắt đầu tại đây:</b> nhập số tiền bạn đang có (TPBank + tiền mặt) vào ô bên dưới. Chỉ cần nhập một lần — từ giờ về sau, sổ sẽ tự tính số dư của bạn dựa trên các khoản chi tiêu, cho vay và chờ thu mà bạn ghi lại.</div></div>
+  ` : '';
+
+  const statusBanner = !firstSetup ? (thieuHut ? `
+  <div class="banner warn">⚠️ <div><b>Bù trừ đang âm ${fmt(Math.abs(t.buTru))}.</b> Sau khi trừ nợ đến hạn tháng ${state.meta.thang}/${state.meta.nam} và ngân sách còn lại, bạn đang thiếu hụt so với nhu cầu chi tiêu tháng này.</div></div>
+  ` : `
+  <div class="banner ok">✓ Bù trừ đang dương ${fmt(t.buTru)} — đủ trang trải nợ đến hạn và chi tiêu còn lại trong tháng.</div>
+  `) : '';
+
+  const cardsBlock = `
+  <div class="cards">
+    <div class="card brass">
+      <div class="card-label">Số dư đầy đủ</div>
+      <div class="card-value">${fmt(t.soDuDayDu)}</div>
+    </div>
+    <div class="card rust">
+      <div class="card-label">Tổng dư nợ (tháng ${state.meta.thang}/${state.meta.nam})</div>
+      <div class="card-value">${fmt(t.tongDuNo)}</div>
+    </div>
+    <div class="card brass">
+      <div class="card-label">Số tiền cần dùng trong tháng</div>
+      <div class="card-value">${fmt(t.soTienCanSuDungThang)}</div>
+    </div>
+    <div class="card jade">
+      <div class="card-label">Số dư hiện tại</div>
+      <div class="card-value jade">${fmt(t.soDuHienTai)}</div>
+    </div>
+    <div class="card ${thieuHut?'rust':'jade'}">
+      <div class="card-label">Bù trừ</div>
+      <div class="card-value ${thieuHut?'rust':'jade'}">${fmt(t.buTru)}</div>
+    </div>
+  </div>`;
+
+  const setupPanel = viewSetupPanel(firstSetup);
+
+  const summaryChips = `
+  <div class="panel">
+    <h3 style="margin-bottom:14px;">Đang chờ xử lý</h3>
+    <div class="summary-row">
+      <div class="summary-chip">Đang cho vay chưa thu<b>${fmt(t.chovayOutstanding)}</b></div>
+      <div class="summary-chip">Đang chờ thu về<b>${fmt(t.chotraOutstanding)}</b></div>
+      <div class="summary-chip">Trả góp đến hạn tháng này<b>${fmt(t.duNoDUNO)}</b></div>
+      <div class="summary-chip">Khoản vay chưa trả<b>${fmt(t.duNoVAY)}</b></div>
+    </div>
+  </div>`;
+
+  const header = `
+  <div class="section-title">Tổng quan</div>
+  <p class="section-sub">Bức tranh tài chính tổng hợp từ toàn bộ các sổ — tự động cập nhật theo tháng/năm bên dưới.</p>`;
+
+  // Khi mới dùng lần đầu: đưa "Thiết lập chung" lên trước để người dùng thấy ngay chỗ nhập số dư ban đầu.
+  if(firstSetup){
+    return header + setupBanner + setupPanel + cardsBlock + summaryChips;
+  }
+  return header + statusBanner + cardsBlock + setupPanel + summaryChips;
+}
+
+/* ==========================================================
+   VIEW: Chi tiêu (CT)
+   ========================================================== */
+function viewCT(){
+  const {thang, nam} = state.meta;
+  const loaiOptions = state.bb.map(b=>b.loai);
+  let rows = state.ct.slice().sort((a,b)=> (b.ngay||'').localeCompare(a.ngay||''));
+  if(state.ui.ctChiThangNay) rows = rows.filter(r=>inMonth(r.ngay, thang, nam));
+
+  const body = rows.length ? rows.map(r=>{
+    const opts = loaiOptions.includes(r.loai) ? loaiOptions : [r.loai, ...loaiOptions];
+    return `
+    <tr>
+      <td data-label="Ngày"><input type="date" class="txt" data-array="ct" data-id="${r.id}" data-field="ngay" data-type="text" value="${r.ngay||''}"></td>
+      <td data-label="Chi tiết"><input type="text" class="txt" data-array="ct" data-id="${r.id}" data-field="chiTiet" data-type="text" value="${esc(r.chiTiet)}"></td>
+      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="ct" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
+      <td data-label="Loại">
+        <select data-array="ct" data-id="${r.id}" data-field="loai" data-type="text">
+          ${opts.map(o=>`<option value="${esc(o)}" ${o===r.loai?'selected':''}>${esc(o)}</option>`).join('')}
+        </select>
+      </td>
+      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="ct" data-id="${r.id}" title="Xoá">✕</button></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản chi nào${state.ui.ctChiThangNay?' trong tháng này':''}. Thêm khoản đầu tiên bên dưới.</td></tr>`;
+
+  return `
+  <div class="section-title">Chi tiêu chi tiết</div>
+  <p class="section-sub">Ghi lại từng khoản chi hằng ngày — dùng để đối chiếu với ngân sách ở tab Ngân sách.</p>
+
+  <div class="toolbar">
+    <label><input type="checkbox" id="ctFilterToggle" ${state.ui.ctChiThangNay?'checked':''}> Chỉ xem tháng ${thang}/${nam}</label>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Ngày</th><th>Chi tiết</th><th class="num">Số tiền</th><th>Loại</th><th class="center">Xoá</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <form class="add-form" data-add="ct">
+      <input type="date" name="ngay" value="${todayStr()}" required>
+      <input type="text" name="chiTiet" placeholder="Chi tiết (VD: Trà đá)" required>
+      <input type="text" inputmode="numeric" name="soTien" placeholder="Số tiền" required>
+      <select name="loai">${loaiOptions.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>
+      <button type="submit">+ Thêm khoản chi</button>
+    </form>
+  </div>
+  `;
+}
+
+/* ==========================================================
+   VIEW: Ngân sách (BB)
+   ========================================================== */
+function viewBB(){
+  const rows = computeBBRows();
+  const sum = computeBBSummary(rows);
+
+  const body = rows.length ? rows.map(r=>`
+    <tr>
+      <td data-label="Loại"><input type="text" class="txt" data-array="bb" data-id="${r.id}" data-field="loai" data-type="text" value="${esc(r.loai)}"></td>
+      <td class="num" data-label="Đơn giá"><input type="text" inputmode="numeric" data-array="bb" data-id="${r.id}" data-field="donGia" data-type="money" value="${formatNumberPlain(r.donGia)}"></td>
+      <td data-label="Chế độ số buổi">
+        <select data-array="bb" data-id="${r.id}" data-field="cheDo" data-type="text">
+          <option value="coDinh" ${r.cheDo==='coDinh'?'selected':''}>Cố định</option>
+          <option value="auto" ${r.cheDo==='auto'?'selected':''}>Ngày làm việc còn lại</option>
+        </select>
+      </td>
+      <td class="num" data-label="Số buổi">
+        ${r.cheDo==='coDinh'
+          ? `<input type="text" inputmode="numeric" data-array="bb" data-id="${r.id}" data-field="soBuoiCoDinh" data-type="number" value="${r.soBuoiCoDinh}">`
+          : `<span class="mono">${r.soBuoi}</span>`}
+      </td>
+      <td class="num mono" data-label="Tổng">${fmt(r.tong)}</td>
+      <td class="num mono" data-label="Đã chi tháng này">${fmt(r.daChi)}</td>
+      <td class="num mono" data-label="Còn lại">${fmt(r.conLai)}</td>
+      <td class="center" data-label="Trạng thái"><span class="pill ${r.conLai>=0?'ok':'warn'}">${r.conLai>=0?'OK':'Vượt'}</span></td>
+      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="bb" data-id="${r.id}" title="Xoá">✕</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="9" class="empty-state">Chưa có hạng mục ngân sách nào.</td></tr>`;
+
+  return `
+  <div class="section-title">Ngân sách theo hạng mục</div>
+  <p class="section-sub">Đơn giá × số buổi dự kiến trong tháng = ngân sách. "Ngày làm việc còn lại" tự đếm số ngày trong tuần (T2–T6) từ hôm nay đến cuối tháng.</p>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr>
+        <th>Loại</th><th class="num">Đơn giá</th><th>Chế độ số buổi</th><th class="num">Số buổi</th>
+        <th class="num">Tổng</th><th class="num">Đã chi tháng này</th><th class="num">Còn lại</th><th class="center">Trạng thái</th><th class="center">Xoá</th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <form class="add-form" data-add="bb">
+      <input type="text" name="loai" placeholder="Tên hạng mục" required>
+      <input type="text" inputmode="numeric" name="donGia" placeholder="Đơn giá" required>
+      <select name="cheDo">
+        <option value="coDinh">Số buổi cố định</option>
+        <option value="auto">Ngày làm việc còn lại</option>
+      </select>
+      <input type="text" inputmode="numeric" name="soBuoiCoDinh" placeholder="Số buổi (nếu cố định)" value="0">
+      <button type="submit">+ Thêm hạng mục</button>
+    </form>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-chip">Số tiền đã dùng<b>${fmt(sum.soTienDaDung)}</b></div>
+    <div class="summary-chip">Số tiền trong tháng cần<b>${fmt(sum.soTienTrongThangCan)}</b></div>
+    <div class="summary-chip">Số tiền thực tế cần sử dụng<b>${fmt(sum.soTienThucTeCanSuDung)}</b></div>
+    <div class="summary-chip">Số tiền vượt quá<b style="color:${sum.vuotQua>0?'#A23B2B':'inherit'}">${fmt(sum.vuotQua)}</b></div>
+    <div class="summary-chip">Số tiền cần<b>${fmt(sum.soTienCan)}</b></div>
+  </div>
+  `;
+}
+
+/* ==========================================================
+   VIEW: Cho vay (CHOVAY)
+   ========================================================== */
+function viewChoVay(){
+  const rows = state.chovay.slice().sort((a,b)=>(b.ngay||'').localeCompare(a.ngay||''));
+  const outstanding = computeChoVayOutstanding();
+  const body = rows.length ? rows.map(r=>`
+    <tr>
+      <td data-label="Ngày"><input type="date" class="txt" data-array="chovay" data-id="${r.id}" data-field="ngay" data-type="text" value="${r.ngay||''}"></td>
+      <td data-label="Khoản"><input type="text" class="txt" data-array="chovay" data-id="${r.id}" data-field="khoan" data-type="text" value="${esc(r.khoan)}"></td>
+      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="chovay" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
+      <td class="center" data-label="Đã thu hồi"><input type="checkbox" data-array="chovay" data-id="${r.id}" data-field="daThu" data-type="checkbox" ${r.daThu?'checked':''}></td>
+      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="chovay" data-id="${r.id}" title="Xoá">✕</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản cho vay nào.</td></tr>`;
+
+  return `
+  <div class="section-title">Cho vay</div>
+  <p class="section-sub">Các khoản bạn cho người khác vay/mượn. Khi tick "Đã thu hồi", số tiền sẽ tự động ngừng bị trừ khỏi Số dư hiện tại ở Tổng quan (coi như đã về lại túi bạn).</p>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Ngày</th><th>Khoản</th><th class="num">Số tiền</th><th class="center">Đã thu hồi</th><th class="center">Xoá</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <form class="add-form" data-add="chovay">
+      <input type="date" name="ngay" value="${todayStr()}" required>
+      <input type="text" name="khoan" placeholder="Cho ai vay / khoản gì" required>
+      <input type="text" inputmode="numeric" name="soTien" placeholder="Số tiền" required>
+      <button type="submit">+ Thêm khoản cho vay</button>
+    </form>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-chip">Đang cho vay (chưa thu hồi)<b>${fmt(outstanding)}</b></div>
+  </div>
+  `;
+}
+
+/* ==========================================================
+   VIEW: Chờ thu (CHOTRA)
+   ========================================================== */
+function viewChoTra(){
+  const rows = state.chotra.slice().sort((a,b)=>(b.ngay||'').localeCompare(a.ngay||''));
+  const outstanding = computeChoTraOutstanding();
+  const received = computeChoTraReceived();
+  const body = rows.length ? rows.map(r=>`
+    <tr>
+      <td data-label="Ngày"><input type="date" class="txt" data-array="chotra" data-id="${r.id}" data-field="ngay" data-type="text" value="${r.ngay||''}"></td>
+      <td data-label="Khoản"><input type="text" class="txt" data-array="chotra" data-id="${r.id}" data-field="khoan" data-type="text" value="${esc(r.khoan)}"></td>
+      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="chotra" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
+      <td class="center" data-label="Đã nhận"><input type="checkbox" data-array="chotra" data-id="${r.id}" data-field="daNhan" data-type="checkbox" ${r.daNhan?'checked':''}></td>
+      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="chotra" data-id="${r.id}" title="Xoá">✕</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản chờ thu nào.</td></tr>`;
+
+  return `
+  <div class="section-title">Chờ thu</div>
+  <p class="section-sub">Các khoản tiền sắp về túi bạn (lương, thưởng...). Khi tick "Đã nhận", số tiền sẽ <b>tự động cộng thêm vào Số dư hiện tại</b> ở Tổng quan — bạn không cần sửa lại số dư TPBank/tiền mặt thủ công.</p>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Ngày</th><th>Khoản</th><th class="num">Số tiền</th><th class="center">Đã nhận</th><th class="center">Xoá</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <form class="add-form" data-add="chotra">
+      <input type="date" name="ngay" value="${todayStr()}" required>
+      <input type="text" name="khoan" placeholder="Khoản gì (VD: Lương tháng 8)" required>
+      <input type="text" inputmode="numeric" name="soTien" placeholder="Số tiền" required>
+      <button type="submit">+ Thêm khoản chờ thu</button>
+    </form>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-chip">Đang chờ nhận<b>${fmt(outstanding)}</b></div>
+    <div class="summary-chip">Đã nhận (đã cộng vào số dư)<b>${fmt(received)}</b></div>
+  </div>
+  `;
+}
+
+/* ==========================================================
+   VIEW: Dư nợ trả góp (DUNO)
+   ========================================================== */
+function viewDuNo(){
+  const rows = state.duno.slice().sort((a,b)=> (b.nam-a.nam) || (b.thang-a.thang) || (b.ngay-a.ngay));
+  const {thang, nam} = state.meta;
+  const duNoHienTai = computeDuNoThang(thang, nam);
+
+  const viewThang = state.ui.duNoThangKhac ?? thang;
+  const viewNam = state.ui.duNoNamKhac ?? nam;
+  const duNoKhac = computeDuNoThang(Number(viewThang), Number(viewNam));
+
+  const body = rows.length ? rows.map(r=>`
+    <tr>
+      <td class="num" data-label="Ngày"><input type="text" inputmode="numeric" data-array="duno" data-id="${r.id}" data-field="ngay" data-type="number" value="${r.ngay}" style="max-width:70px"></td>
+      <td class="num" data-label="Tháng"><input type="text" inputmode="numeric" data-array="duno" data-id="${r.id}" data-field="thang" data-type="number" value="${r.thang}" style="max-width:70px"></td>
+      <td class="num" data-label="Năm"><input type="text" inputmode="numeric" data-array="duno" data-id="${r.id}" data-field="nam" data-type="number" value="${r.nam}" style="max-width:80px"></td>
+      <td data-label="Tên khoản nợ"><input type="text" class="txt" data-array="duno" data-id="${r.id}" data-field="ten" data-type="text" value="${esc(r.ten)}"></td>
+      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="duno" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
+      <td data-label="Ghi chú"><input type="text" class="txt" data-array="duno" data-id="${r.id}" data-field="ghiChu" data-type="text" value="${esc(r.ghiChu||'')}"></td>
+      <td class="center" data-label="Đã hoàn thành"><input type="checkbox" data-array="duno" data-id="${r.id}" data-field="daHoanThanh" data-type="checkbox" ${r.daHoanThanh?'checked':''}></td>
+      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="duno" data-id="${r.id}" title="Xoá">✕</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="8" class="empty-state">Chưa có khoản dư nợ trả góp nào.</td></tr>`;
+
+  return `
+  <div class="section-title">Dư nợ trả góp</div>
+  <p class="section-sub">Các khoản nợ trả góp theo kỳ (VD: TPBank, Shopee...) — tự động cộng vào "Tổng dư nợ" ở Tổng quan theo đúng tháng hiện tại.</p>
+
+  <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+    <div class="card rust">
+      <div class="card-label">Dư nợ tháng hiện tại (${thang}/${nam})</div>
+      <div class="card-value">${fmt(duNoHienTai)}</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Xem dư nợ tháng khác</h3>
+    <div class="meta-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));">
+      <div class="field">
+        <label>Tháng</label>
+        <input type="number" id="duNoThangInput" value="${viewThang}" min="1" max="12">
+      </div>
+      <div class="field">
+        <label>Năm</label>
+        <input type="number" id="duNoNamInput" value="${viewNam}">
+      </div>
+    </div>
+    <div class="summary-row">
+      <div class="summary-chip">Dư nợ tháng ${viewThang}/${viewNam}<b>${fmt(duNoKhac)}</b></div>
+    </div>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Ngày</th><th>Tháng</th><th>Năm</th><th>Tên khoản nợ</th><th class="num">Số tiền</th><th>Ghi chú</th><th class="center">Đã hoàn thành</th><th class="center">Xoá</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <form class="add-form" data-add="duno">
+      <input type="text" inputmode="numeric" name="ngay" placeholder="Ngày" style="max-width:70px" required>
+      <input type="text" inputmode="numeric" name="thang" placeholder="Tháng" style="max-width:70px" value="${thang}" required>
+      <input type="text" inputmode="numeric" name="nam" placeholder="Năm" style="max-width:90px" value="${nam}" required>
+      <input type="text" name="ten" placeholder="Tên khoản nợ (VD: TPBank)" required>
+      <input type="text" inputmode="numeric" name="soTien" placeholder="Số tiền" required>
+      <input type="text" name="ghiChu" placeholder="Ghi chú">
+      <button type="submit">+ Thêm khoản nợ</button>
+    </form>
+  </div>
+  `;
+}
+
+/* ==========================================================
+   VIEW: Vay (VAY)
+   ========================================================== */
+function viewVay(){
+  const rows = state.vay.slice().sort((a,b)=> (b.nam-a.nam) || (b.thang-a.thang) || (b.ngay-a.ngay));
+  const outstanding = computeVayOutstanding();
+
+  const body = rows.length ? rows.map(r=>`
+    <tr>
+      <td class="num" data-label="Ngày"><input type="text" inputmode="numeric" data-array="vay" data-id="${r.id}" data-field="ngay" data-type="number" value="${r.ngay}" style="max-width:70px"></td>
+      <td class="num" data-label="Tháng"><input type="text" inputmode="numeric" data-array="vay" data-id="${r.id}" data-field="thang" data-type="number" value="${r.thang}" style="max-width:70px"></td>
+      <td class="num" data-label="Năm"><input type="text" inputmode="numeric" data-array="vay" data-id="${r.id}" data-field="nam" data-type="number" value="${r.nam}" style="max-width:80px"></td>
+      <td data-label="Tên khoản vay"><input type="text" class="txt" data-array="vay" data-id="${r.id}" data-field="ten" data-type="text" value="${esc(r.ten)}"></td>
+      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="vay" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
+      <td data-label="Ghi chú"><input type="text" class="txt" data-array="vay" data-id="${r.id}" data-field="ghiChu" data-type="text" value="${esc(r.ghiChu||'')}"></td>
+      <td class="center" data-label="Đã hoàn thành"><input type="checkbox" data-array="vay" data-id="${r.id}" data-field="daHoanThanh" data-type="checkbox" ${r.daHoanThanh?'checked':''}></td>
+      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="vay" data-id="${r.id}" title="Xoá">✕</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="8" class="empty-state">Chưa có khoản vay nào.</td></tr>`;
+
+  return `
+  <div class="section-title">Khoản vay</div>
+  <p class="section-sub">Các khoản bạn vay người khác/tổ chức — không tự reset theo tháng, chỉ mất khi tick "Đã hoàn thành".</p>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Ngày</th><th>Tháng</th><th>Năm</th><th>Tên khoản vay</th><th class="num">Số tiền</th><th>Ghi chú</th><th class="center">Đã hoàn thành</th><th class="center">Xoá</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <form class="add-form" data-add="vay">
+      <input type="text" inputmode="numeric" name="ngay" placeholder="Ngày" style="max-width:70px" required>
+      <input type="text" inputmode="numeric" name="thang" placeholder="Tháng" style="max-width:70px" value="${state.meta.thang}" required>
+      <input type="text" inputmode="numeric" name="nam" placeholder="Năm" style="max-width:90px" value="${state.meta.nam}" required>
+      <input type="text" name="ten" placeholder="Tên khoản vay" required>
+      <input type="text" inputmode="numeric" name="soTien" placeholder="Số tiền" required>
+      <input type="text" name="ghiChu" placeholder="Ghi chú">
+      <button type="submit">+ Thêm khoản vay</button>
+    </form>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-chip">Tổng còn nợ vay<b>${fmt(outstanding)}</b></div>
+  </div>
+  `;
+}
+
+/* ==========================================================
+   VIEW: Dữ liệu (Import/Export/Reset)
+   ========================================================== */
+function viewData(){
+  return `
+  <div class="section-title">Dữ liệu</div>
+  <p class="section-sub">Toàn bộ dữ liệu chỉ nằm trong trình duyệt này. Tải xuống JSON thường xuyên để không mất dữ liệu khi xoá cache/đổi máy.</p>
+
+  <div class="panel">
+    <h3 style="margin-bottom:14px;">Sao lưu</h3>
+    <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 14px;">Tải toàn bộ dữ liệu (Tổng quan, Chi tiêu, Ngân sách, Cho vay, Chờ thu, Dư nợ, Vay) thành một file JSON.</p>
+    <button class="btn primary" id="btnExport">↓ Tải xuống JSON</button>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-bottom:14px;">Khôi phục</h3>
+    <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 14px;">Chọn file JSON đã tải xuống trước đó để khôi phục — sẽ ghi đè toàn bộ dữ liệu hiện tại.</p>
+    <input type="file" id="fileImport" accept="application/json">
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-bottom:14px;">Xoá toàn bộ dữ liệu</h3>
+    <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 14px;">Đưa sổ về trạng thái trống hoàn toàn. Không thể hoàn tác — hãy tải xuống JSON trước nếu cần.</p>
+    <button class="btn danger" id="btnReset">Xoá toàn bộ dữ liệu</button>
+  </div>
+  `;
+}
+
+/* ==========================================================
+   NORMALIZE NEW ROW (add-form submit)
+   ========================================================== */
+function normalizeNewRow(arrName, obj){
+  switch(arrName){
+    case 'ct':
+      obj.soTien = parseMoney(obj.soTien);
+      break;
+    case 'bb':
+      obj.donGia = parseMoney(obj.donGia);
+      obj.soBuoiCoDinh = parseInt(obj.soBuoiCoDinh,10) || 0;
+      break;
+    case 'chovay':
+      obj.soTien = parseMoney(obj.soTien);
+      obj.daThu = false;
+      break;
+    case 'chotra':
+      obj.soTien = parseMoney(obj.soTien);
+      obj.daNhan = false;
+      break;
+    case 'duno':
+    case 'vay':
+      obj.soTien = parseMoney(obj.soTien);
+      obj.ngay = parseInt(obj.ngay,10) || 1;
+      obj.thang = parseInt(obj.thang,10) || state.meta.thang;
+      obj.nam = parseInt(obj.nam,10) || state.meta.nam;
+      obj.daHoanThanh = false;
+      break;
+  }
+}
+
+/* ==========================================================
+   EVENT DELEGATION
+   ========================================================== */
+document.addEventListener('click', e=>{
+  const tabBtn = e.target.closest('[data-tab]');
+  if(tabBtn){ state.ui.currentTab = tabBtn.dataset.tab; saveState(); renderAll(); window.scrollTo({top:0}); return; }
+
+  const delBtn = e.target.closest('[data-action="delete"]');
+  if(delBtn){
+    const arrName = delBtn.dataset.array, id = delBtn.dataset.id;
+    if(confirm('Xoá dòng này?')){
+      state[arrName] = state[arrName].filter(r=>r.id!==id);
+      saveState(); renderAll();
+    }
+    return;
+  }
+
+  if(e.target.id==='btnExport'){
+    const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const now = new Date();
+    const stamp = now.toISOString().slice(0,10).replace(/-/g,'') + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
+    a.href = url; a.download = `so-chi-tieu_${stamp}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    return;
+  }
+
+  if(e.target.id==='btnReset'){
+    if(confirm('Xoá TOÀN BỘ dữ liệu? Hành động này không thể hoàn tác.')){
+      state = defaultState();
+      saveState(); renderAll();
+    }
+    return;
+  }
+});
+
+document.addEventListener('change', e=>{
+  const el = e.target;
+
+  // Toggle lọc CT theo tháng
+  if(el.id==='ctFilterToggle'){
+    state.ui.ctChiThangNay = el.checked;
+    saveState(); renderAll(); return;
+  }
+
+  // Xem dư nợ tháng khác
+  if(el.id==='duNoThangInput' || el.id==='duNoNamInput'){
+    const t = document.getElementById('duNoThangInput');
+    const n = document.getElementById('duNoNamInput');
+    state.ui.duNoThangKhac = parseInt(t.value,10) || state.meta.thang;
+    state.ui.duNoNamKhac = parseInt(n.value,10) || state.meta.nam;
+    saveState(); renderAll(); return;
+  }
+
+  // Import file
+  if(el.id==='fileImport'){
+    const file = el.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = evt=>{
+      try{
+        const parsed = JSON.parse(evt.target.result);
+        if(!parsed || typeof parsed!=='object' || !parsed.meta){
+          alert('File JSON không đúng định dạng của Sổ Chi Tiêu.');
+          return;
+        }
+        if(confirm('Khôi phục sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại. Tiếp tục?')){
+          parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:false, duNoThangKhac:null, duNoNamKhac:null };
+          state = parsed;
+          saveState(); renderAll();
+        }
+      }catch(err){
+        alert('Không đọc được file JSON: '+err.message);
+      }
+    };
+    reader.readAsText(file);
+    return;
+  }
+
+  // Meta fields (Tổng quan settings)
+  if(el.dataset && el.dataset.meta){
+    const field = el.dataset.meta, type = el.dataset.type || 'text';
+    let val;
+    if(type==='money'){ val = parseMoney(el.value); el.value = formatNumberPlain(val); }
+    else if(type==='number'){ val = parseInt(el.value,10) || 0; }
+    else { val = el.value; }
+    state.meta[field] = val;
+    saveState(); renderAll(); return;
+  }
+
+  // Table cell edits
+  if(el.dataset && el.dataset.array){
+    const arrName = el.dataset.array, id = el.dataset.id, field = el.dataset.field, type = el.dataset.type || 'text';
+    const row = state[arrName].find(r=>r.id===id);
+    if(!row) return;
+    let val;
+    if(type==='money'){ val = parseMoney(el.value); }
+    else if(type==='number'){ val = parseInt(String(el.value).replace(/[^0-9-]/g,''),10) || 0; }
+    else if(type==='checkbox'){ val = el.checked; }
+    else { val = el.value; }
+    row[field] = val;
+    saveState(); renderAll(); return;
+  }
+});
+
+document.addEventListener('submit', e=>{
+  const form = e.target.closest('form[data-add]');
+  if(!form) return;
+  e.preventDefault();
+  const arrName = form.dataset.add;
+  const fd = new FormData(form);
+  const obj = { id: uid() };
+  for(const [k,v] of fd.entries()) obj[k] = v;
+  normalizeNewRow(arrName, obj);
+  state[arrName].push(obj);
+  saveState();
+  renderAll();
+});
+
+/* ==========================================================
+   INIT
+   ========================================================== */
+renderAll();
+</script>
+</body>
+</html>
