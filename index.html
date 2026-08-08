@@ -43,7 +43,7 @@
     background:var(--paper);
     color:var(--ink);
     font-family:'Inter',system-ui,-apple-system,sans-serif;
-    font-size:14.5px;
+    font-size:13px;
     line-height:1.45;
     -webkit-font-smoothing:antialiased;
     min-height:100vh;
@@ -70,7 +70,7 @@
   }
   .masthead-title span{color:var(--accent-2);}
   .masthead-meta{
-    font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:rgba(255,255,255,.78);
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:rgba(255,255,255,.78);
     display:flex; gap:6px 14px; flex-wrap:wrap;
   }
   .masthead-meta b{color:#FFFFFF; font-weight:600;}
@@ -102,7 +102,7 @@
   /* ---------- Add-panel (collapsible "thêm mới" form) ---------- */
   .add-panel{padding:14px 16px;}
   .add-panel-head{display:flex; align-items:center; justify-content:space-between; gap:10px;}
-  .add-panel-head h3{margin:0; font-family:'Fraunces',serif; font-weight:600; font-size:14.5px; color:var(--ink-soft); flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .add-panel-head h3{margin:0; font-family:'Fraunces',serif; font-weight:600; font-size:15px; color:var(--ink-soft); flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .btn-toggle-add{
     appearance:none; border:none; background:var(--brass); color:var(--white);
     width:30px; height:30px; border-radius:50%; cursor:pointer; flex:0 0 auto;
@@ -129,7 +129,7 @@
     box-shadow:var(--shadow); padding:16px 17px; margin-bottom:16px;
   }
   .panel h3{margin:0 0 5px; font-family:'Fraunces',serif; font-weight:600; font-size:15px;}
-  .panel .hint{font-size:12.5px; color:var(--ink-soft); margin:0 0 14px; line-height:1.55;}
+  .panel .hint{font-size:13px; color:var(--ink-soft); margin:0 0 14px; line-height:1.55;}
 
   /* ---------- Cards (dashboard) ---------- */
   .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:9px; margin-bottom:16px;}
@@ -158,7 +158,7 @@
   /* ---------- Meta form (Tổng quan settings) ---------- */
   .meta-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px;}
   .meta-grid .field-full{grid-column:1 / -1;}
-  .field label{display:block; font-size:11.5px; color:var(--ink-soft); margin-bottom:5px; font-weight:600;}
+  .field label{display:block; font-size:11px; color:var(--ink-soft); margin-bottom:5px; font-weight:600;}
   .field input, .field select{
     width:100%; height:var(--ctrl-h); padding:0 11px; border:1px solid var(--line); border-radius:var(--r-sm);
     background:var(--white); font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--ink);
@@ -199,7 +199,7 @@
 
   .btn-icon{
     appearance:none; border:none; background:transparent; cursor:pointer; color:var(--ink-faint);
-    width:30px; height:30px; border-radius:7px; line-height:1; font-size:15px;
+    width:30px; height:30px; border-radius:7px; line-height:1; font-size:16px;
     display:inline-flex; align-items:center; justify-content:center;
   }
   .btn-icon:hover{color:var(--rust); background:var(--rust-bg);}
@@ -214,7 +214,7 @@
   }
   .add-form input, .add-form select{
     height:var(--ctrl-h); box-sizing:border-box; padding:0 12px; border:1px solid var(--line); border-radius:var(--r-sm); background:var(--white);
-    font-family:'Inter',sans-serif; font-size:14.5px; flex:1 1 170px; min-width:130px;
+    font-family:'Inter',sans-serif; font-size:14px; flex:1 1 170px; min-width:130px;
     -webkit-appearance:none; appearance:none; color:var(--ink);
   }
   .add-form input[style]{flex:0 0 auto; min-width:0; text-align:center;} /* ngày/tháng/năm — narrow, grouped */
@@ -245,7 +245,7 @@
 
   .btn{
     appearance:none; border:1px solid var(--line); background:var(--white); color:var(--ink);
-    height:var(--ctrl-h); padding:0 18px; border-radius:var(--r-sm); font-weight:600; font-size:13.5px; cursor:pointer;
+    height:var(--ctrl-h); padding:0 18px; border-radius:var(--r-sm); font-weight:600; font-size:14px; cursor:pointer;
   }
   .btn:hover{border-color:var(--brass); color:var(--brass);}
   .btn.primary{background:var(--brass); color:#FFFFFF; border-color:var(--brass);}
@@ -254,7 +254,7 @@
   .btn.danger:hover{background:var(--rust-bg);}
 
   footer{
-    text-align:center; color:var(--ink-faint); font-size:11.5px; padding:18px 16px 30px; border-top:1px solid var(--line-soft);
+    text-align:center; color:var(--ink-faint); font-size:12px; padding:18px 16px 30px; border-top:1px solid var(--line-soft);
     line-height:1.6;
   }
 
@@ -275,7 +275,7 @@
     position:fixed; left:16px; bottom:24px; z-index:55;
     width:38px; height:38px; border-radius:50%;
     background:rgba(250,250,246,.92); color:var(--ink-faint); border:1px solid var(--line-soft);
-    font-size:15px; line-height:1; backdrop-filter:blur(3px);
+    font-size:16px; line-height:1; backdrop-filter:blur(3px);
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 1px 4px rgba(30,42,60,.12);
     cursor:pointer;
@@ -299,13 +299,13 @@
   }
   .quick-add-grabber{width:36px; height:4px; background:var(--line); border-radius:99px; margin:9px auto 12px;}
   .quick-add-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
-  .quick-add-head h3{margin:0; font-family:'Fraunces',serif; font-weight:600; font-size:16.5px;}
+  .quick-add-head h3{margin:0; font-family:'Fraunces',serif; font-weight:600; font-size:16px;}
   .quick-add-close{
     appearance:none; border:none; background:var(--paper-2); color:var(--ink-soft);
-    width:30px; height:30px; border-radius:50%; font-size:14px; cursor:pointer;
+    width:30px; height:30px; border-radius:50%; font-size:16px; cursor:pointer;
   }
   .quick-add-field{margin-bottom:11px;}
-  .quick-add-field label{display:block; font-size:11.5px; font-weight:600; color:var(--ink-soft); margin-bottom:5px;}
+  .quick-add-field label{display:block; font-size:11px; font-weight:600; color:var(--ink-soft); margin-bottom:5px;}
   .quick-add-field input, .quick-add-field select{
     width:100%; height:46px; padding:0 13px; border:1px solid var(--line); border-radius:var(--r-sm);
     background:var(--white); font-size:16px; color:var(--ink); font-family:'Inter',sans-serif;
@@ -319,7 +319,7 @@
   .quick-add-field input:focus, .quick-add-field select:focus{outline:none; border-color:var(--brass); box-shadow:0 0 0 3px rgba(79,70,229,.16);}
   .quick-add-submit{
     width:100%; height:48px; border:none; border-radius:var(--r-sm); margin-top:2px;
-    background:var(--brass); color:#FFFFFF; font-weight:700; font-size:14.5px; cursor:pointer;
+    background:var(--brass); color:#FFFFFF; font-weight:700; font-size:14px; cursor:pointer;
   }
   .quick-add-submit:active{background:#3D33C9;}
 
@@ -328,16 +328,16 @@
      ========================================================== */
   @media (max-width: 700px){
     main{padding:14px 12px 84px;}
-    .section-title{font-size:16.5px;}
-    .section-sub{font-size:12.5px; margin-bottom:13px;}
+    .section-title{font-size:16px;}
     .panel{padding:14px 14px;}
 
     .cards{grid-template-columns:1fr 1fr; gap:8px;}
     .card{padding:11px 12px;}
-    .card-label{font-size:10px;}
-    .card-value{font-size:15.5px;}
+    .card-value{font-size:16px;}
 
-    /* iOS zoom-on-focus prevention: inputs need >=16px font */
+    /* iOS zoom-on-focus prevention: every form control (table/add-form/field/quick-add)
+       already renders at 16px — quick-add-field inputs are 16px at every breakpoint too,
+       so this single rule keeps ALL inputs in the app on one shared size on mobile. */
     table input, table select, .add-form input, .add-form select, .field input, .field select{
       font-size:16px;
     }
@@ -358,7 +358,7 @@
     }
     tbody tr td:last-child{border-bottom:none;}
     tbody td::before{
-      content:attr(data-label); font-size:10.5px; font-weight:700; color:var(--ink-soft);
+      content:attr(data-label); font-size:11px; font-weight:700; color:var(--ink-soft);
       text-transform:uppercase; letter-spacing:.03em; text-align:left; flex:0 0 auto;
     }
     tbody td.empty-state{display:block; text-align:center; padding:20px 16px;}
@@ -371,19 +371,11 @@
     .add-form input, .add-form select{flex:1 1 100%; min-width:0;}
     .add-form input[style]{flex:0 0 auto; min-width:64px;} /* keep ngày/tháng/năm grouped on one line */
 
-    .btn-icon{font-size:16px;}
     .btn{width:100%;}
     .panel .btn{width:auto;}
 
-    footer{font-size:10.5px; padding:14px 14px 26px;}
-
-    .fab-add{right:16px; bottom:18px; width:54px; height:54px; font-size:27px;}
+    .fab-add{right:16px; bottom:18px; width:54px; height:54px;}
     .fab-top{left:14px; bottom:20px;}
-  }
-
-  @media (max-width: 380px){
-    .cards{grid-template-columns:1fr 1fr;}
-    .card-value{font-size:14.5px;}
   }
 </style>
 </head>
@@ -1087,19 +1079,19 @@ function viewData(){
 
   <div class="panel">
     <h3 style="margin-bottom:14px;">Sao lưu</h3>
-    <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 14px;">Tải toàn bộ dữ liệu (Tổng quan, Chi tiêu, Ngân sách, Cho vay, Chờ thu, Dư nợ, Vay) thành một file JSON.</p>
+    <p class="hint">Tải toàn bộ dữ liệu (Tổng quan, Chi tiêu, Ngân sách, Cho vay, Chờ thu, Dư nợ, Vay) thành một file JSON.</p>
     <button class="btn primary" id="btnExport">↓ Tải xuống JSON</button>
   </div>
 
   <div class="panel">
     <h3 style="margin-bottom:14px;">Khôi phục</h3>
-    <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 14px;">Chọn file JSON đã tải xuống trước đó để khôi phục — sẽ ghi đè toàn bộ dữ liệu hiện tại.</p>
+    <p class="hint">Chọn file JSON đã tải xuống trước đó để khôi phục — sẽ ghi đè toàn bộ dữ liệu hiện tại.</p>
     <input type="file" id="fileImport" accept="application/json">
   </div>
 
   <div class="panel">
     <h3 style="margin-bottom:14px;">Xoá toàn bộ dữ liệu</h3>
-    <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 14px;">Đưa sổ về trạng thái trống hoàn toàn. Không thể hoàn tác — hãy tải xuống JSON trước nếu cần.</p>
+    <p class="hint">Đưa sổ về trạng thái trống hoàn toàn. Không thể hoàn tác — hãy tải xuống JSON trước nếu cần.</p>
     <button class="btn danger" id="btnReset">Xoá toàn bộ dữ liệu</button>
   </div>
   `;
