@@ -830,8 +830,12 @@ function viewTCCN(){
 
   const cardsBlock = rel===0 || rel<0 ? `
   <div class="cards">
+    <div class="card jade">
+      <div class="card-label">Số dư thực tế</div>
+      <div class="card-value jade">${fmt(t.soDuHienTai)}</div>
+    </div>
     <div class="card brass">
-      <div class="card-label">Số dư đầy đủ (hôm nay)</div>
+      <div class="card-label">Số dư đầy đủ (đã cộng cả khoản đang Chờ thu)</div>
       <div class="card-value">${fmt(t.soDuDayDu)}</div>
     </div>
     ${daChiChip}
@@ -853,8 +857,12 @@ function viewTCCN(){
     </div>
   </div>` : `
   <div class="cards">
+    <div class="card jade">
+      <div class="card-label">Số dư thực tế</div>
+      <div class="card-value jade">${fmt(t.soDuHienTai)}</div>
+    </div>
     <div class="card brass">
-      <div class="card-label">Số dư đầy đủ (hôm nay)</div>
+      <div class="card-label">Số dư đầy đủ (đã cộng cả khoản đang Chờ thu)</div>
       <div class="card-value">${fmt(t.soDuDayDu)}</div>
     </div>
     <div class="card rust">
