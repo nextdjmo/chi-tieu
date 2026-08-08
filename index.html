@@ -89,18 +89,18 @@
 
   /* ---------- Add-panel (collapsible "thêm mới" form) ---------- */
   .add-panel{padding:14px 16px;}
-  .add-panel-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
-  .add-panel-head h3{margin:0; font-family:'Fraunces',serif; font-weight:600; font-size:15px; color:var(--ink-soft);}
+  .add-panel-head{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .add-panel-head h3{margin:0; font-family:'Fraunces',serif; font-weight:600; font-size:15px; color:var(--ink-soft); flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .btn-toggle-add{
     appearance:none; border:1px solid var(--brass); background:var(--brass); color:#2A2010;
-    font-weight:700; font-size:13px; padding:9px 15px; border-radius:8px; cursor:pointer;
-    display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
-    transition:background .15s, transform .1s;
+    width:34px; height:34px; border-radius:50%; cursor:pointer; flex:0 0 auto;
+    display:inline-flex; align-items:center; justify-content:center;
+    transition:background .15s, transform .18s;
   }
   .btn-toggle-add:hover{background:#96742F;}
-  .btn-toggle-add:active{transform:scale(.98);}
-  .btn-toggle-add .chev{display:inline-block; transition:transform .18s; font-size:11px;}
-  .btn-toggle-add.open .chev{transform:rotate(180deg);}
+  .btn-toggle-add:active{transform:scale(.94);}
+  .btn-toggle-add .toggle-icon{display:inline-block; font-size:18px; font-weight:600; line-height:1; transition:transform .2s;}
+  .btn-toggle-add.open .toggle-icon{transform:rotate(45deg);}
   .add-form-wrap{overflow:hidden; max-height:0; transition:max-height .2s ease;}
   .add-form-wrap.open{max-height:600px; margin-top:14px;}
   .add-form-wrap .add-form{border-top:none; background:var(--paper-2); border-radius:var(--radius);}
@@ -144,11 +144,17 @@
   .banner.setup{background:var(--brass-soft); border-color:var(--brass); color:#4A3A16; border-width:1.5px;}
 
   /* ---------- Meta form (Tổng quan settings) ---------- */
-  .meta-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px;}
+  .meta-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:14px;}
+  .meta-grid .field-full{grid-column:1 / -1;}
   .field label{display:block; font-size:12px; color:var(--ink-soft); margin-bottom:5px; font-weight:600;}
   .field input, .field select{
-    width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:7px;
+    width:100%; height:44px; padding:0 10px; border:1px solid var(--line); border-radius:7px;
     background:var(--white); font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--ink);
+    box-sizing:border-box; line-height:normal; -webkit-appearance:none; appearance:none;
+  }
+  .field select{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%2357624F'/></svg>");
+    background-repeat:no-repeat; background-position:right 10px center; padding-right:26px;
   }
   .field input:focus, .field select:focus{outline:2px solid var(--brass); outline-offset:1px;}
 
@@ -167,7 +173,7 @@
   td.center, th.center{text-align:center;}
 
   table input[type=text], table input[type=date], table input[type=number], table select{
-    width:100%; min-width:80px; padding:6px 8px; border:1px solid transparent; border-radius:6px;
+    width:100%; min-width:80px; height:36px; box-sizing:border-box; padding:0 8px; border:1px solid transparent; border-radius:6px;
     background:transparent; font-family:'IBM Plex Mono',monospace; font-size:13.5px; color:var(--ink);
   }
   table input:hover, table select:hover{border-color:var(--line);}
@@ -190,12 +196,13 @@
     background:var(--paper-2); border-radius:0 0 var(--radius) var(--radius);
   }
   .add-form input, .add-form select{
-    padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:var(--white);
+    height:42px; box-sizing:border-box; padding:0 10px; border:1px solid var(--line); border-radius:7px; background:var(--white);
     font-family:'Inter',sans-serif; font-size:13.5px; flex:1 1 120px; min-width:100px;
+    -webkit-appearance:none; appearance:none;
   }
   .add-form button{
     appearance:none; border:none; background:var(--ink); color:var(--paper); font-weight:600;
-    padding:9px 16px; border-radius:7px; cursor:pointer; font-size:13.5px; white-space:nowrap;
+    height:42px; padding:0 16px; border-radius:7px; cursor:pointer; font-size:13.5px; white-space:nowrap;
   }
   .add-form button:hover{background:var(--brass);}
   .add-form button:active{background:var(--brass);}
@@ -243,17 +250,17 @@
   }
   .fab-add:active{background:#96742F;}
 
-  /* ---------- Back-to-top floating button ---------- */
+  /* ---------- Back-to-top floating button (nhẹ, đặt góc trái để tránh chồng nút +) ---------- */
   .fab-top{
-    position:fixed; right:20px; bottom:92px; z-index:60;
-    width:56px; height:56px; border-radius:50%;
-    background:var(--panel); color:var(--ink-soft); border:1px solid var(--line);
-    font-size:22px; line-height:1;
+    position:fixed; left:16px; bottom:24px; z-index:55;
+    width:42px; height:42px; border-radius:50%;
+    background:rgba(250,250,245,.9); color:var(--ink-faint); border:1px solid var(--line-soft);
+    font-size:16px; line-height:1; backdrop-filter:blur(3px);
     display:flex; align-items:center; justify-content:center;
-    box-shadow:0 2px 10px rgba(27,36,32,.18);
+    box-shadow:0 1px 4px rgba(27,36,32,.12);
     cursor:pointer;
-    opacity:0; pointer-events:none; transform:translateY(8px);
-    transition:opacity .18s, transform .18s;
+    opacity:0; pointer-events:none; transform:translateY(6px);
+    transition:opacity .18s, transform .18s, color .15s, border-color .15s;
   }
   .fab-top.show{opacity:1; pointer-events:auto; transform:translateY(0);}
   .fab-top:hover{color:var(--brass); border-color:var(--brass);}
@@ -354,8 +361,8 @@
     table input[type=checkbox]{width:22px; height:22px; margin:0; flex:0 0 auto;}
 
     .add-form{flex-direction:column; align-items:stretch; border-radius:12px; padding:14px 13px;}
-    .add-form input, .add-form select{flex:1 1 auto; width:100%; padding:11px 12px; font-size:16px;}
-    .add-form button{width:100%; padding:13px 16px; font-size:14.5px; margin-top:2px;}
+    .add-form input, .add-form select{flex:1 1 auto; width:100%; height:48px; padding:0 12px; font-size:16px;}
+    .add-form button{width:100%; height:48px; padding:0 16px; font-size:14.5px; margin-top:2px;}
 
     .btn-icon{font-size:18px; padding:8px 10px;}
     .btn{width:100%; padding:12px 16px;}
@@ -364,13 +371,12 @@
     footer{font-size:11px; padding:16px 14px 28px;}
 
     .fab-add{right:16px; bottom:20px; width:58px; height:58px; font-size:30px;}
-    .fab-top{right:16px; bottom:88px; width:58px; height:58px; font-size:22px;}
+    .fab-top{left:14px; bottom:20px; width:40px; height:40px; font-size:15px;}
   }
 
   @media (max-width: 380px){
     .cards{grid-template-columns:1fr 1fr;}
     .card-value{font-size:15.5px;}
-    .meta-grid{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -500,8 +506,10 @@ function renderAddToggle(key, label){
   return `
   <div class="panel add-panel">
     <div class="add-panel-head">
-      <h3>Thêm mới</h3>
-      <button type="button" class="btn-toggle-add ${addOpen[key]?'open':''}" data-toggle-add="${key}">+ ${esc(label)} <span class="chev">▾</span></button>
+      <h3>${esc(label)}</h3>
+      <button type="button" class="btn-toggle-add ${addOpen[key]?'open':''}" data-toggle-add="${key}" aria-label="${addOpen[key]?'Đóng':'Mở'} form ${esc(label)}" title="${addOpen[key]?'Đóng':'Thêm mới'}">
+        <span class="toggle-icon">+</span>
+      </button>
     </div>
     <div class="add-form-wrap ${addOpen[key]?'open':''}" data-add-wrap="${key}">
       ###FORM###
@@ -659,7 +667,7 @@ function viewSetupPanel(highlight){
         <label>Số dư TPBank (ban đầu)</label>
         <input type="text" inputmode="numeric" data-meta="tpbank" data-type="money" value="${formatNumberPlain(state.meta.tpbank)}">
       </div>
-      <div class="field">
+      <div class="field field-full">
         <label>Tiền mặt (ban đầu)</label>
         <input type="text" inputmode="numeric" data-meta="tienMat" data-type="money" value="${formatNumberPlain(state.meta.tienMat)}">
       </div>
@@ -976,7 +984,7 @@ function viewDuNo(){
 
   <div class="panel">
     <h3>Xem dư nợ tháng khác</h3>
-    <div class="meta-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));">
+    <div class="meta-grid">
       <div class="field">
         <label>Tháng</label>
         <input type="number" id="duNoThangInput" value="${viewThang}" min="1" max="12">
