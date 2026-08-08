@@ -629,11 +629,18 @@ function computeBBRows(){ return computeBBRowsFor(state.meta.thang, state.meta.n
 function computeBBSummary(rows){
   const sumTong = rows.reduce((s,r)=>s+r.tong,0);
   const sumConLai = rows.reduce((s,r)=>s+r.conLai,0);
+  const sumDaChi = rows.reduce((s,r)=>s+r.daChi,0);
   const soTienDaDung = sumTong - sumConLai;
   const vuotQua = rows.reduce((s,r)=> s + (r.conLai<0 ? -r.conLai : 0), 0);
   const soTienThucTeCanSuDung = sumTong + vuotQua;
   const soTienCan = sumConLai;
-  return { soTienDaDung, soTienTrongThangCan: sumTong, soTienThucTeCanSuDung, vuotQua, soTienCan };
+  // "Cần dùng thực tế" cho phần dự phóng: chỉ cộng phần CÒN THIẾU của từng hạng mục (>=0),
+  // KHÔNG cho phép hạng mục đã chi vượt (conLai âm) bù trừ ngược lại cho hạng mục khác còn dư.
+  // Tiền đã chi vượt là chuyện đã xảy ra rồi (đã trừ thẳng vào số dư thực tế), không phải một
+  // khoản "được thưởng" để giảm nhu cầu chi tiêu sắp tới của hạng mục khác.
+  const soTienCanThucTe = rows.reduce((s,r)=> s + Math.max(0, r.conLai), 0);
+  const soHangMucVuotNgs = rows.filter(r=>r.conLai<0).length;
+  return { soTienDaDung, sumDaChi, soTienTrongThangCan: sumTong, soTienThucTeCanSuDung, vuotQua, soTienCan, soTienCanThucTe, soHangMucVuotNgs };
 }
 function computeChoVayOutstanding(){ return state.chovay.reduce((s,r)=> s + (!r.daThu ? (Number(r.soTien)||0) : 0), 0); }
 function computeChoTraOutstanding(){ return state.chotra.reduce((s,r)=> s + (!r.daNhan ? (Number(r.soTien)||0) : 0), 0); }
@@ -668,7 +675,8 @@ function computeTCCNForMonth(viewThang, viewNam){
   const bbRowsXem = computeBBRowsFor(viewThang, viewNam);
   const bbSumXem = computeBBSummary(bbRowsXem);
   const duNoThangXem = computeDuNoThang(viewThang, viewNam);
-  const tongCanThangXem = bbSumXem.soTienCan + duNoThangXem;
+  // Dùng soTienCanThucTe (không cho hạng mục vượt ngân sách bù trừ ngược cho hạng mục khác)
+  const tongCanThangXem = bbSumXem.soTienCanThucTe + duNoThangXem;
 
   // Luỹ kế từ tháng hiện tại đến tháng đang xem (chỉ có ý nghĩa nếu xem >= tháng hiện tại)
   const isFutureOrCurrent = cmpMonth(viewThang, viewNam, curThang, curNam) >= 0;
@@ -678,7 +686,7 @@ function computeTCCNForMonth(viewThang, viewNam){
     months.forEach(m=>{
       const rows = (m.thang===viewThang && m.nam===viewNam) ? bbRowsXem : computeBBRowsFor(m.thang, m.nam);
       const s = computeBBSummary(rows);
-      cumNganSach += s.soTienCan;
+      cumNganSach += s.soTienCanThucTe;
       cumDuNo += computeDuNoThang(m.thang, m.nam);
     });
   }
@@ -782,9 +790,11 @@ function viewTCCN(){
     ${rel!==0 ? '<button type="button" class="month-nav-today" id="tccnTodayMonth">↺ Về tháng hiện tại</button>' : ''}
   </div>`;
 
-  const thieuHutThang = (t.bbSumXem.soTienCan + t.duNoThangXem - (rel===0 ? t.soDuDayDu - t.duNoVAY : 0)) ; // không dùng trực tiếp, giữ chỗ
-
   const thieuHutDuKien = t.buTruDuKien < 0;
+  const coVuotNganSach = t.bbSumXem.vuotQua > 0;
+  const vuotBanner = (coVuotNganSach && rel<=0) ? `
+  <div class="banner warn">📉 <div><b>Đã chi vượt ngân sách ở ${t.bbSumXem.soHangMucVuotNgs} hạng mục, tổng vượt ${fmt(t.bbSumXem.vuotQua)}.</b> Khoản vượt này không được bù trừ bằng hạng mục khác còn dư — nó đã trừ thẳng vào số dư thực tế của bạn rồi. Xem chi tiết ở tab <b>Ngân sách</b>.</div></div>
+  ` : '';
 
   const statusBanner = !firstSetup ? (
     rel === 0 ? (thieuHutDuKien ? `
@@ -800,19 +810,27 @@ function viewTCCN(){
     `
   ) : '';
 
+  const ngsLabel = rel===0 ? 'Ngân sách còn cần dùng' : (rel<0 ? 'Ngân sách còn thiếu (nếu có)' : 'Ngân sách cần dùng');
+  const daChiChip = (rel<=0) ? `
+    <div class="card ${coVuotNganSach?'rust':'brass'}">
+      <div class="card-label">Đã chi / Ngân sách tháng ${viewThang}/${viewNam}</div>
+      <div class="card-value ${coVuotNganSach?'rust':''}">${fmt(t.bbSumXem.sumDaChi)} / ${fmt(t.bbSumXem.soTienTrongThangCan)}</div>
+    </div>` : '';
+
   const cardsBlock = rel===0 || rel<0 ? `
   <div class="cards">
     <div class="card brass">
       <div class="card-label">Số dư đầy đủ (hôm nay)</div>
       <div class="card-value">${fmt(t.soDuDayDu)}</div>
     </div>
+    ${daChiChip}
     <div class="card rust">
       <div class="card-label">Dư nợ đến hạn tháng ${viewThang}/${viewNam}</div>
       <div class="card-value">${fmt(t.duNoThangXem)}</div>
     </div>
     <div class="card brass">
-      <div class="card-label">Ngân sách cần dùng tháng ${viewThang}/${viewNam}</div>
-      <div class="card-value">${fmt(t.bbSumXem.soTienCan)}</div>
+      <div class="card-label">${ngsLabel} (tháng ${viewThang}/${viewNam})</div>
+      <div class="card-value">${fmt(t.bbSumXem.soTienCanThucTe)}</div>
     </div>
     <div class="card jade">
       <div class="card-label">Tổng cần cho tháng ${viewThang}/${viewNam}</div>
@@ -833,8 +851,8 @@ function viewTCCN(){
       <div class="card-value">${fmt(t.duNoThangXem)}</div>
     </div>
     <div class="card brass">
-      <div class="card-label">Ngân sách cần dùng tháng ${viewThang}/${viewNam}</div>
-      <div class="card-value">${fmt(t.bbSumXem.soTienCan)}</div>
+      <div class="card-label">${ngsLabel} (tháng ${viewThang}/${viewNam})</div>
+      <div class="card-value">${fmt(t.bbSumXem.soTienCanThucTe)}</div>
     </div>
     <div class="card rust">
       <div class="card-label">Tổng cần cộng dồn (${t.months.length} tháng, kể cả nay)</div>
@@ -858,6 +876,26 @@ function viewTCCN(){
       <div class="summary-chip">Khoản vay chưa trả (không theo tháng)<b>${fmt(t.duNoVAY)}</b></div>
     </div>
   </div>`;
+
+  const hangMucVuotDetail = (coVuotNganSach && rel<=0) ? `
+  <div class="panel">
+    <h3 style="margin-bottom:6px;">Hạng mục đã chi vượt ngân sách tháng ${viewThang}/${viewNam}</h3>
+    <p class="hint">Đây là những hạng mục đã tiêu nhiều hơn ngân sách dự kiến — phần vượt đã trừ thẳng vào số dư thực tế, không được cấn trừ bằng hạng mục khác còn dư.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Hạng mục</th><th class="num">Ngân sách</th><th class="num">Đã chi</th><th class="num">Vượt</th></tr></thead>
+        <tbody>
+          ${bbRowsXem.filter(r=>r.conLai<0).map(r=>`
+            <tr>
+              <td data-label="Hạng mục">${esc(r.loai)}</td>
+              <td class="num mono" data-label="Ngân sách">${fmt(r.tong)}</td>
+              <td class="num mono" data-label="Đã chi">${fmt(r.daChi)}</td>
+              <td class="num mono" data-label="Vượt"><span style="color:var(--rust)">${fmt(-r.conLai)}</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>` : '';
 
   const projectionDetail = rel>0 ? `
   <div class="panel">
@@ -896,7 +934,7 @@ function viewTCCN(){
   if(firstSetup){
     return header + monthNav + setupBanner + setupPanel + cardsBlock + summaryChips;
   }
-  return header + monthNav + statusBanner + cardsBlock + projectionDetail + setupPanel + summaryChips;
+  return header + monthNav + statusBanner + vuotBanner + cardsBlock + hangMucVuotDetail + projectionDetail + setupPanel + summaryChips;
 }
 
 /* ==========================================================
