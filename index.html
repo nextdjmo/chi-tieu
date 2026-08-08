@@ -618,11 +618,22 @@ function monthsBetween(t1,n1,t2,n2){
    ========================================================== */
 function computeBBRowsFor(thang, nam){
   return state.bb.map(row=>{
+    const matched = state.ct.filter(c=> c.loai===row.loai && inMonth(c.ngay, thang, nam));
+    const daChi = matched.reduce((s,c)=> s + (Number(c.soTien)||0), 0);
+    const soLanChi = matched.length;
+    // Chế độ "khongGioiHan" (không giới hạn): dùng cho các hạng mục không đặt trước số buổi cố
+    // định (VD: đi chơi) — nhưng vẫn có một TỔNG NGÂN SÁCH cố định (nhập ở ô "Đơn giá", đóng
+    // vai trò tổng tiền cho cả tháng thay vì đơn giá/buổi). Chi vượt tổng này vẫn báo "Vượt"
+    // như bình thường, chỉ khác là không nhân với số buổi.
+    if(row.cheDo==='khongGioiHan'){
+      const tong = Number(row.donGia)||0;
+      const conLai = tong - daChi;
+      return {...row, soBuoi:null, tong, daChi, soLanChi, conLai};
+    }
     const soBuoi = row.cheDo==='auto' ? weekdaysRemainingInMonth(nam, thang) : (Number(row.soBuoiCoDinh)||0);
     const tong = (Number(row.donGia)||0) * soBuoi;
-    const daChi = state.ct.reduce((s,c)=> s + (c.loai===row.loai && inMonth(c.ngay, thang, nam) ? (Number(c.soTien)||0) : 0), 0);
     const conLai = tong - daChi;
-    return {...row, soBuoi, tong, daChi, conLai};
+    return {...row, soBuoi, tong, daChi, soLanChi, conLai};
   });
 }
 function computeBBRows(){ return computeBBRowsFor(state.meta.thang, state.meta.nam); }
@@ -1000,33 +1011,37 @@ function viewBB(){
   const body = rows.length ? rows.map(r=>`
     <tr>
       <td data-label="Loại"><input type="text" class="txt" data-array="bb" data-id="${r.id}" data-field="loai" data-type="text" value="${esc(r.loai)}"></td>
-      <td class="num" data-label="Đơn giá"><input type="text" inputmode="numeric" data-array="bb" data-id="${r.id}" data-field="donGia" data-type="money" value="${formatNumberPlain(r.donGia)}"></td>
+      <td class="num" data-label="${r.cheDo==='khongGioiHan'?'Tổng ngân sách':'Đơn giá'}"><input type="text" inputmode="numeric" data-array="bb" data-id="${r.id}" data-field="donGia" data-type="money" value="${formatNumberPlain(r.donGia)}"></td>
       <td data-label="Chế độ số buổi">
         <select data-array="bb" data-id="${r.id}" data-field="cheDo" data-type="text">
           <option value="coDinh" ${r.cheDo==='coDinh'?'selected':''}>Cố định</option>
           <option value="auto" ${r.cheDo==='auto'?'selected':''}>Ngày làm việc còn lại</option>
+          <option value="khongGioiHan" ${r.cheDo==='khongGioiHan'?'selected':''}>Không giới hạn</option>
         </select>
       </td>
       <td class="num" data-label="Số buổi">
         ${r.cheDo==='coDinh'
           ? `<input type="text" inputmode="numeric" data-array="bb" data-id="${r.id}" data-field="soBuoiCoDinh" data-type="number" value="${r.soBuoiCoDinh}">`
-          : `<span class="mono">${r.soBuoi}</span>`}
+          : r.cheDo==='auto' ? `<span class="mono">${r.soBuoi}</span>`
+          : `<span class="mono" style="color:var(--ink-faint)">—</span>`}
       </td>
       <td class="num mono" data-label="Tổng">${fmt(r.tong)}</td>
+      <td class="num mono" data-label="Số lần chi">${r.soLanChi}</td>
       <td class="num mono" data-label="Đã chi tháng này">${fmt(r.daChi)}</td>
       <td class="num mono" data-label="Còn lại">${fmt(r.conLai)}</td>
       <td class="center" data-label="Trạng thái"><span class="pill ${r.conLai>=0?'ok':'warn'}">${r.conLai>=0?'OK':'Vượt'}</span></td>
       <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="bb" data-id="${r.id}" title="Xoá">✕</button></td>
     </tr>
-  `).join('') : `<tr><td colspan="9" class="empty-state">Chưa có hạng mục ngân sách nào.</td></tr>`;
+  `).join('') : `<tr><td colspan="10" class="empty-state">Chưa có hạng mục ngân sách nào.</td></tr>`;
 
   const addForm = `
     <form class="add-form" data-add="bb">
       <input type="text" name="loai" placeholder="Tên hạng mục" required>
-      <input type="text" inputmode="numeric" data-type="money" name="donGia" placeholder="Đơn giá" required>
+      <input type="text" inputmode="numeric" data-type="money" name="donGia" placeholder="Đơn giá (hoặc Tổng ngân sách nếu chọn Không giới hạn)" required>
       <select name="cheDo">
         <option value="coDinh">Số buổi cố định</option>
         <option value="auto">Ngày làm việc còn lại</option>
+        <option value="khongGioiHan">Không giới hạn</option>
       </select>
       <input type="text" inputmode="numeric" name="soBuoiCoDinh" placeholder="Số buổi (nếu cố định)" value="0">
       <button type="submit">+ Thêm hạng mục</button>
@@ -1034,7 +1049,7 @@ function viewBB(){
 
   return `
   <div class="section-title">Ngân sách theo hạng mục</div>
-  <p class="section-sub">Đơn giá × số buổi dự kiến trong tháng = ngân sách. "Ngày làm việc còn lại" tự đếm số ngày trong tuần (T2–T6) từ hôm nay đến cuối tháng.</p>
+  <p class="section-sub">Đơn giá × số buổi dự kiến trong tháng = ngân sách. "Ngày làm việc còn lại" tự đếm số ngày trong tuần (T2–T6) từ hôm nay đến cuối tháng. "Không giới hạn" dùng cho hạng mục không đặt trước số buổi (VD: đi chơi) — nhập thẳng <b>tổng ngân sách</b> vào ô "Đơn giá", chi vượt số đó vẫn báo Vượt như bình thường.</p>
 
   ${wrapAddForm('bb', 'Thêm hạng mục', addForm)}
 
@@ -1042,7 +1057,7 @@ function viewBB(){
     <table>
       <thead><tr>
         <th>Loại</th><th class="num">Đơn giá</th><th>Chế độ số buổi</th><th class="num">Số buổi</th>
-        <th class="num">Tổng</th><th class="num">Đã chi tháng này</th><th class="num">Còn lại</th><th class="center">Trạng thái</th><th class="center">Xoá</th>
+        <th class="num">Tổng</th><th class="num">Số lần chi</th><th class="num">Đã chi tháng này</th><th class="num">Còn lại</th><th class="center">Trạng thái</th><th class="center">Xoá</th>
       </tr></thead>
       <tbody>${body}</tbody>
     </table>
@@ -1390,6 +1405,18 @@ document.getElementById('quickAddForm').addEventListener('submit', e=>{
    EVENT DELEGATION
    ========================================================== */
 document.addEventListener('click', e=>{
+  // Sửa lỗi trên iOS: khi đang gõ dở một ô input/select rồi chạm thẳng vào nút khác
+  // (VD: đổi tab), Safari/Chrome trên iPhone đôi khi KHÔNG kịp bắn sự kiện 'change'
+  // của ô đang focus trước khi xử lý cú chạm đó — khiến giá trị vừa sửa (ví dụ ở
+  // tab Ngân sách) không được lưu vào state, và bị "quay lại số cũ" khi renderAll().
+  // Chủ động gọi blur() ngay từ đầu để buộc 'change' chạy đồng bộ trước, đảm bảo
+  // giá trị luôn được lưu trước khi các thao tác khác (chuyển tab, xoá dòng...) chạy.
+  const activeEl = document.activeElement;
+  if(activeEl && activeEl !== e.target && activeEl.matches &&
+     activeEl.matches('input, select, textarea') && !activeEl.contains(e.target)){
+    activeEl.blur();
+  }
+
   const tabBtn = e.target.closest('[data-tab]');
   if(tabBtn){ state.ui.currentTab = tabBtn.dataset.tab; saveState(); renderAll(); window.scrollTo({top:0}); return; }
 
