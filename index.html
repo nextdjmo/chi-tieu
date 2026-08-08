@@ -81,11 +81,29 @@
     font-family:'Inter',sans-serif; font-weight:600; font-size:13.5px;
     color:var(--ink-soft); padding:13px 16px; white-space:nowrap;
     border-bottom:3px solid transparent;
-    transition:color .15s, border-color .15s;
+    transition:color .15s, border-color .15s, background .15s;
     flex-shrink:0;
   }
   .tab-btn:hover{color:var(--ink);}
   .tab-btn.active{color:var(--ink); border-bottom-color:var(--brass);}
+
+  /* ---------- Add-panel (collapsible "thêm mới" form) ---------- */
+  .add-panel{padding:14px 16px;}
+  .add-panel-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .add-panel-head h3{margin:0; font-family:'Fraunces',serif; font-weight:600; font-size:15px; color:var(--ink-soft);}
+  .btn-toggle-add{
+    appearance:none; border:1px solid var(--brass); background:var(--brass); color:#2A2010;
+    font-weight:700; font-size:13px; padding:9px 15px; border-radius:8px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+    transition:background .15s, transform .1s;
+  }
+  .btn-toggle-add:hover{background:#96742F;}
+  .btn-toggle-add:active{transform:scale(.98);}
+  .btn-toggle-add .chev{display:inline-block; transition:transform .18s; font-size:11px;}
+  .btn-toggle-add.open .chev{transform:rotate(180deg);}
+  .add-form-wrap{overflow:hidden; max-height:0; transition:max-height .2s ease;}
+  .add-form-wrap.open{max-height:600px; margin-top:14px;}
+  .add-form-wrap .add-form{border-top:none; background:var(--paper-2); border-radius:var(--radius);}
 
   /* ---------- Main ---------- */
   main{max-width:1080px; margin:0 auto; padding:22px 20px 60px;}
@@ -225,6 +243,22 @@
   }
   .fab-add:active{background:#96742F;}
 
+  /* ---------- Back-to-top floating button ---------- */
+  .fab-top{
+    position:fixed; right:20px; bottom:92px; z-index:60;
+    width:56px; height:56px; border-radius:50%;
+    background:var(--panel); color:var(--ink-soft); border:1px solid var(--line);
+    font-size:22px; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 10px rgba(27,36,32,.18);
+    cursor:pointer;
+    opacity:0; pointer-events:none; transform:translateY(8px);
+    transition:opacity .18s, transform .18s;
+  }
+  .fab-top.show{opacity:1; pointer-events:auto; transform:translateY(0);}
+  .fab-top:hover{color:var(--brass); border-color:var(--brass);}
+  .fab-top:active{background:var(--paper-2);}
+
   /* ---------- Quick-add sheet ---------- */
   .quick-add-overlay{
     position:fixed; inset:0; background:rgba(27,36,32,.5); z-index:100;
@@ -266,11 +300,11 @@
     .masthead-title{font-size:20px;}
     .masthead-meta{font-size:11px; gap:8px 14px;}
     .tabs-inner{
-      padding:4px; flex-wrap:wrap; overflow-x:visible;
-      justify-content:center; gap:2px;
+      display:grid; grid-template-columns:repeat(4,1fr); gap:2px;
+      padding:4px; overflow-x:visible;
     }
     .tab-btn{
-      padding:10px 8px; font-size:12px; flex:1 1 auto; text-align:center;
+      padding:10px 4px; font-size:11.5px; text-align:center;
       border-bottom:3px solid transparent; border-radius:8px;
     }
     .tab-btn.active{background:var(--paper-2);}
@@ -330,6 +364,7 @@
     footer{font-size:11px; padding:16px 14px 28px;}
 
     .fab-add{right:16px; bottom:20px; width:58px; height:58px; font-size:30px;}
+    .fab-top{right:16px; bottom:88px; width:58px; height:58px; font-size:22px;}
   }
 
   @media (max-width: 380px){
@@ -361,6 +396,9 @@
 
 <!-- Nút nổi thêm chi tiêu nhanh -->
 <button class="fab-add" id="fabAdd" title="Thêm chi tiêu nhanh" aria-label="Thêm chi tiêu nhanh">+</button>
+
+<!-- Nút về đầu trang -->
+<button class="fab-top" id="fabTop" title="Về đầu trang" aria-label="Về đầu trang">↑</button>
 
 <!-- Bảng nhập nhanh -->
 <div class="quick-add-overlay" id="quickAddOverlay">
@@ -455,6 +493,24 @@ function loadState(){
 
 let state = loadState();
 function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+/* Trạng thái mở/đóng của các khối "+ Thêm ..." — không cần lưu vào localStorage */
+const addOpen = {};
+function renderAddToggle(key, label){
+  return `
+  <div class="panel add-panel">
+    <div class="add-panel-head">
+      <h3>Thêm mới</h3>
+      <button type="button" class="btn-toggle-add ${addOpen[key]?'open':''}" data-toggle-add="${key}">+ ${esc(label)} <span class="chev">▾</span></button>
+    </div>
+    <div class="add-form-wrap ${addOpen[key]?'open':''}" data-add-wrap="${key}">
+      ###FORM###
+    </div>
+  </div>`;
+}
+function wrapAddForm(key, label, formHtml){
+  return renderAddToggle(key, label).replace('###FORM###', formHtml);
+}
 
 /* ==========================================================
    HELPERS
@@ -698,9 +754,20 @@ function viewCT(){
     </tr>`;
   }).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản chi nào${state.ui.ctChiThangNay?' trong tháng này':''}. Thêm khoản đầu tiên bằng nút + ở góc màn hình, hoặc bên dưới.</td></tr>`;
 
+  const addForm = `
+    <form class="add-form" data-add="ct">
+      <input type="date" name="ngay" value="${todayStr()}" required>
+      <input type="text" name="chiTiet" placeholder="Chi tiết (VD: Trà đá)" required>
+      <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
+      <select name="loai">${loaiOptions.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>
+      <button type="submit">+ Thêm khoản chi</button>
+    </form>`;
+
   return `
   <div class="section-title">Chi tiêu chi tiết</div>
   <p class="section-sub">Ghi lại từng khoản chi hằng ngày — dùng để đối chiếu với ngân sách ở tab Ngân sách. Mẹo: bấm nút <b>+</b> ở góc màn hình để thêm nhanh từ bất kỳ đâu.</p>
+
+  ${wrapAddForm('ct', 'Thêm khoản chi', addForm)}
 
   <div class="toolbar">
     <label><input type="checkbox" id="ctFilterToggle" ${state.ui.ctChiThangNay?'checked':''}> Chỉ xem tháng ${thang}/${nam}</label>
@@ -711,13 +778,6 @@ function viewCT(){
       <thead><tr><th>Ngày</th><th>Chi tiết</th><th class="num">Số tiền</th><th>Loại</th><th class="center">Xoá</th></tr></thead>
       <tbody>${body}</tbody>
     </table>
-    <form class="add-form" data-add="ct">
-      <input type="date" name="ngay" value="${todayStr()}" required>
-      <input type="text" name="chiTiet" placeholder="Chi tiết (VD: Trà đá)" required>
-      <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
-      <select name="loai">${loaiOptions.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>
-      <button type="submit">+ Thêm khoản chi</button>
-    </form>
   </div>
   `;
 }
@@ -752,18 +812,7 @@ function viewBB(){
     </tr>
   `).join('') : `<tr><td colspan="9" class="empty-state">Chưa có hạng mục ngân sách nào.</td></tr>`;
 
-  return `
-  <div class="section-title">Ngân sách theo hạng mục</div>
-  <p class="section-sub">Đơn giá × số buổi dự kiến trong tháng = ngân sách. "Ngày làm việc còn lại" tự đếm số ngày trong tuần (T2–T6) từ hôm nay đến cuối tháng.</p>
-
-  <div class="table-scroll">
-    <table>
-      <thead><tr>
-        <th>Loại</th><th class="num">Đơn giá</th><th>Chế độ số buổi</th><th class="num">Số buổi</th>
-        <th class="num">Tổng</th><th class="num">Đã chi tháng này</th><th class="num">Còn lại</th><th class="center">Trạng thái</th><th class="center">Xoá</th>
-      </tr></thead>
-      <tbody>${body}</tbody>
-    </table>
+  const addForm = `
     <form class="add-form" data-add="bb">
       <input type="text" name="loai" placeholder="Tên hạng mục" required>
       <input type="text" inputmode="numeric" data-type="money" name="donGia" placeholder="Đơn giá" required>
@@ -773,7 +822,22 @@ function viewBB(){
       </select>
       <input type="text" inputmode="numeric" name="soBuoiCoDinh" placeholder="Số buổi (nếu cố định)" value="0">
       <button type="submit">+ Thêm hạng mục</button>
-    </form>
+    </form>`;
+
+  return `
+  <div class="section-title">Ngân sách theo hạng mục</div>
+  <p class="section-sub">Đơn giá × số buổi dự kiến trong tháng = ngân sách. "Ngày làm việc còn lại" tự đếm số ngày trong tuần (T2–T6) từ hôm nay đến cuối tháng.</p>
+
+  ${wrapAddForm('bb', 'Thêm hạng mục', addForm)}
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr>
+        <th>Loại</th><th class="num">Đơn giá</th><th>Chế độ số buổi</th><th class="num">Số buổi</th>
+        <th class="num">Tổng</th><th class="num">Đã chi tháng này</th><th class="num">Còn lại</th><th class="center">Trạng thái</th><th class="center">Xoá</th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table>
   </div>
 
   <div class="summary-row">
@@ -802,21 +866,25 @@ function viewChoVay(){
     </tr>
   `).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản cho vay nào.</td></tr>`;
 
+  const addForm = `
+    <form class="add-form" data-add="chovay">
+      <input type="date" name="ngay" value="${todayStr()}" required>
+      <input type="text" name="khoan" placeholder="Cho ai vay / khoản gì" required>
+      <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
+      <button type="submit">+ Thêm khoản cho vay</button>
+    </form>`;
+
   return `
   <div class="section-title">Cho vay</div>
   <p class="section-sub">Các khoản bạn cho người khác vay/mượn. Khi tick "Đã thu hồi", số tiền sẽ tự động ngừng bị trừ khỏi Số dư hiện tại ở Tổng quan (coi như đã về lại túi bạn).</p>
+
+  ${wrapAddForm('chovay', 'Thêm khoản cho vay', addForm)}
 
   <div class="table-scroll">
     <table>
       <thead><tr><th>Ngày</th><th>Khoản</th><th class="num">Số tiền</th><th class="center">Đã thu hồi</th><th class="center">Xoá</th></tr></thead>
       <tbody>${body}</tbody>
     </table>
-    <form class="add-form" data-add="chovay">
-      <input type="date" name="ngay" value="${todayStr()}" required>
-      <input type="text" name="khoan" placeholder="Cho ai vay / khoản gì" required>
-      <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
-      <button type="submit">+ Thêm khoản cho vay</button>
-    </form>
   </div>
 
   <div class="summary-row">
@@ -842,21 +910,25 @@ function viewChoTra(){
     </tr>
   `).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản chờ thu nào.</td></tr>`;
 
+  const addForm = `
+    <form class="add-form" data-add="chotra">
+      <input type="date" name="ngay" value="${todayStr()}" required>
+      <input type="text" name="khoan" placeholder="Khoản gì (VD: Lương tháng 8)" required>
+      <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
+      <button type="submit">+ Thêm khoản chờ thu</button>
+    </form>`;
+
   return `
   <div class="section-title">Chờ thu</div>
   <p class="section-sub">Các khoản tiền sắp về túi bạn (lương, thưởng...). Khi tick "Đã nhận", số tiền sẽ <b>tự động cộng thêm vào Số dư hiện tại</b> ở Tổng quan — bạn không cần sửa lại số dư TPBank/tiền mặt thủ công.</p>
+
+  ${wrapAddForm('chotra', 'Thêm khoản chờ thu', addForm)}
 
   <div class="table-scroll">
     <table>
       <thead><tr><th>Ngày</th><th>Khoản</th><th class="num">Số tiền</th><th class="center">Đã nhận</th><th class="center">Xoá</th></tr></thead>
       <tbody>${body}</tbody>
     </table>
-    <form class="add-form" data-add="chotra">
-      <input type="date" name="ngay" value="${todayStr()}" required>
-      <input type="text" name="khoan" placeholder="Khoản gì (VD: Lương tháng 8)" required>
-      <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
-      <button type="submit">+ Thêm khoản chờ thu</button>
-    </form>
   </div>
 
   <div class="summary-row">
@@ -919,11 +991,7 @@ function viewDuNo(){
     </div>
   </div>
 
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Ngày</th><th>Tháng</th><th>Năm</th><th>Tên khoản nợ</th><th class="num">Số tiền</th><th>Ghi chú</th><th class="center">Đã hoàn thành</th><th class="center">Xoá</th></tr></thead>
-      <tbody>${body}</tbody>
-    </table>
+  ${wrapAddForm('duno', 'Thêm khoản nợ', `
     <form class="add-form" data-add="duno">
       <input type="text" inputmode="numeric" name="ngay" placeholder="Ngày" style="max-width:70px" required>
       <input type="text" inputmode="numeric" name="thang" placeholder="Tháng" style="max-width:70px" value="${thang}" required>
@@ -933,6 +1001,13 @@ function viewDuNo(){
       <input type="text" name="ghiChu" placeholder="Ghi chú">
       <button type="submit">+ Thêm khoản nợ</button>
     </form>
+  `)}
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Ngày</th><th>Tháng</th><th>Năm</th><th>Tên khoản nợ</th><th class="num">Số tiền</th><th>Ghi chú</th><th class="center">Đã hoàn thành</th><th class="center">Xoá</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
   </div>
   `;
 }
@@ -957,15 +1032,7 @@ function viewVay(){
     </tr>
   `).join('') : `<tr><td colspan="8" class="empty-state">Chưa có khoản vay nào.</td></tr>`;
 
-  return `
-  <div class="section-title">Khoản vay</div>
-  <p class="section-sub">Các khoản bạn vay người khác/tổ chức — không tự reset theo tháng, chỉ mất khi tick "Đã hoàn thành".</p>
-
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Ngày</th><th>Tháng</th><th>Năm</th><th>Tên khoản vay</th><th class="num">Số tiền</th><th>Ghi chú</th><th class="center">Đã hoàn thành</th><th class="center">Xoá</th></tr></thead>
-      <tbody>${body}</tbody>
-    </table>
+  const addForm = `
     <form class="add-form" data-add="vay">
       <input type="text" inputmode="numeric" name="ngay" placeholder="Ngày" style="max-width:70px" required>
       <input type="text" inputmode="numeric" name="thang" placeholder="Tháng" style="max-width:70px" value="${state.meta.thang}" required>
@@ -974,7 +1041,19 @@ function viewVay(){
       <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
       <input type="text" name="ghiChu" placeholder="Ghi chú">
       <button type="submit">+ Thêm khoản vay</button>
-    </form>
+    </form>`;
+
+  return `
+  <div class="section-title">Khoản vay</div>
+  <p class="section-sub">Các khoản bạn vay người khác/tổ chức — không tự reset theo tháng, chỉ mất khi tick "Đã hoàn thành".</p>
+
+  ${wrapAddForm('vay', 'Thêm khoản vay', addForm)}
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Ngày</th><th>Tháng</th><th>Năm</th><th>Tên khoản vay</th><th class="num">Số tiền</th><th>Ghi chú</th><th class="center">Đã hoàn thành</th><th class="center">Xoá</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
   </div>
 
   <div class="summary-row">
@@ -1064,6 +1143,20 @@ function closeQuickAdd(){
   document.body.style.overflow = '';
 }
 
+/* ==========================================================
+   BACK TO TOP (nút về đầu trang)
+   ========================================================== */
+const fabTop = document.getElementById('fabTop');
+function updateFabTop(){
+  if(window.scrollY > 320) fabTop.classList.add('show');
+  else fabTop.classList.remove('show');
+}
+window.addEventListener('scroll', updateFabTop, {passive:true});
+fabTop.addEventListener('click', ()=>{
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+updateFabTop();
+
 document.getElementById('fabAdd').addEventListener('click', openQuickAdd);
 document.getElementById('quickAddClose').addEventListener('click', closeQuickAdd);
 document.getElementById('quickAddOverlay').addEventListener('click', e=>{
@@ -1092,6 +1185,22 @@ document.addEventListener('click', e=>{
   const tabBtn = e.target.closest('[data-tab]');
   if(tabBtn){ state.ui.currentTab = tabBtn.dataset.tab; saveState(); renderAll(); window.scrollTo({top:0}); return; }
 
+  const toggleBtn = e.target.closest('[data-toggle-add]');
+  if(toggleBtn){
+    const key = toggleBtn.dataset.toggleAdd;
+    addOpen[key] = !addOpen[key];
+    const wrap = document.querySelector(`[data-add-wrap="${key}"]`);
+    if(wrap){
+      wrap.classList.toggle('open', addOpen[key]);
+      toggleBtn.classList.toggle('open', addOpen[key]);
+      if(addOpen[key]){
+        const firstField = wrap.querySelector('input, select');
+        if(firstField) setTimeout(()=>firstField.focus(), 180);
+      }
+    }
+    return;
+  }
+
   const delBtn = e.target.closest('[data-action="delete"]');
   if(delBtn){
     const arrName = delBtn.dataset.array, id = delBtn.dataset.id;
@@ -1107,8 +1216,14 @@ document.addEventListener('click', e=>{
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const now = new Date();
-    const stamp = now.toISOString().slice(0,10).replace(/-/g,'') + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
-    a.href = url; a.download = `so-chi-tieu_${stamp}.json`;
+    const dd = now.getDate();
+    const mm = now.getMonth()+1;
+    const yyyy = now.getFullYear();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mi = String(now.getMinutes()).padStart(2,'0');
+    // Lưu ý: trình duyệt sẽ tự đổi "/" và ":" thành "_" khi lưu file (ký tự này không hợp lệ trong tên file).
+    const fileName = `DATATC-${dd}/${mm}/${yyyy} ${hh}:${mi}.json`;
+    a.href = url; a.download = fileName;
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
     return;
@@ -1123,18 +1238,34 @@ document.addEventListener('click', e=>{
   }
 });
 
-/* Định dạng số tiền có dấu phẩy ngay khi đang gõ (mọi ô có data-type="money") */
+/* Định dạng số tiền có dấu phẩy ngay khi đang gõ (mọi ô có data-type="money")
+   Giữ đúng vị trí con trỏ theo số chữ số đã gõ trước đó, thay vì luôn đẩy về cuối —
+   đây chính là nguyên nhân khiến việc sửa một số tiền có sẵn (VD: Ngân sách) rất khó
+   thực hiện trước đây (mỗi lần gõ, con trỏ bị bật ngược về cuối ô). */
 document.addEventListener('input', e=>{
   const el = e.target;
   if(el.matches && el.matches('[data-type="money"]')){
-    const digits = el.value.replace(/[^0-9]/g,'');
+    const raw = el.value;
+    const caret = el.selectionStart == null ? raw.length : el.selectionStart;
+    const digitsBeforeCaret = raw.slice(0, caret).replace(/[^0-9]/g,'').length;
+    const digits = raw.replace(/[^0-9]/g,'');
     const num = digits ? parseInt(digits,10) : 0;
     const formatted = digits ? formatNumberPlain(num) : '';
-    if(el.value !== formatted){
-      el.value = formatted;
-      // đưa con trỏ về cuối ô (đơn giản, tránh lệch vị trí khi thêm dấu phẩy)
-      el.setSelectionRange(el.value.length, el.value.length);
+    el.value = formatted;
+    let pos = 0, seen = 0;
+    while(pos < formatted.length && seen < digitsBeforeCaret){
+      if(/[0-9]/.test(formatted[pos])) seen++;
+      pos++;
     }
+    el.setSelectionRange(pos, pos);
+  }
+});
+
+/* Bấm vào ô tiền là chọn hết nội dung sẵn có, để gõ số mới là thay thế luôn — đỡ phải xoá tay */
+document.addEventListener('focusin', e=>{
+  const el = e.target;
+  if(el.matches && el.matches('[data-type="money"]')){
+    setTimeout(()=>{ try{ el.select(); }catch(err){} }, 0);
   }
 });
 
@@ -1218,7 +1349,9 @@ document.addEventListener('submit', e=>{
   normalizeNewRow(arrName, obj);
   state[arrName].push(obj);
   saveState();
+  addOpen[arrName] = false;
   renderAll();
+  window.scrollTo({top:0, behavior:'smooth'});
 });
 
 /* ==========================================================
