@@ -1063,12 +1063,12 @@ function viewBB(){
     </table>
   </div>
 
-  <div class="summary-row">
-    <div class="summary-chip">Số tiền đã dùng<b>${fmt(sum.soTienDaDung)}</b></div>
-    <div class="summary-chip">Số tiền trong tháng cần<b>${fmt(sum.soTienTrongThangCan)}</b></div>
-    <div class="summary-chip">Số tiền thực tế cần sử dụng<b>${fmt(sum.soTienThucTeCanSuDung)}</b></div>
-    <div class="summary-chip">Số tiền vượt quá<b style="color:${sum.vuotQua>0?'#EF4444':'inherit'}">${fmt(sum.vuotQua)}</b></div>
-    <div class="summary-chip">Số tiền cần<b>${fmt(sum.soTienCan)}</b></div>
+  <div class="summary-row" id="bbSummaryRow">
+    <div class="summary-chip">Số tiền đã dùng<b id="bbSumDaDung">${fmt(sum.soTienDaDung)}</b></div>
+    <div class="summary-chip">Số tiền trong tháng cần<b id="bbSumTrongThangCan">${fmt(sum.soTienTrongThangCan)}</b></div>
+    <div class="summary-chip">Số tiền thực tế cần sử dụng<b id="bbSumThucTeCanSuDung">${fmt(sum.soTienThucTeCanSuDung)}</b></div>
+    <div class="summary-chip">Số tiền vượt quá<b id="bbSumVuotQua" style="color:${sum.vuotQua>0?'#EF4444':'inherit'}">${fmt(sum.vuotQua)}</b></div>
+    <div class="summary-chip">Số tiền cần<b id="bbSumCan">${fmt(sum.soTienCan)}</b></div>
   </div>
   `;
 }
@@ -1516,7 +1516,61 @@ document.addEventListener('input', e=>{
     }
     el.setSelectionRange(pos, pos);
   }
+
+  // Cập nhật NGAY các cột tính toán (Tổng/Còn lại/Trạng thái ở Ngân sách...) trong lúc
+  // đang gõ, không chờ rời khỏi ô (blur/change) mới "nhảy" số như trước. Chỉ patch trực
+  // tiếp các ô liên quan bằng DOM (không renderAll() toàn trang) để không làm mất con trỏ/
+  // bàn phím đang gõ dở.
+  if(el.dataset && el.dataset.array){
+    liveUpdateComputedCells(el);
+  }
 });
+
+/* Ghi giá trị đang gõ vào state ngay lập tức (không cần đợi blur) rồi tính lại + patch
+   các ô hiển thị phụ thuộc (hiện chỉ áp dụng cho bảng Ngân sách — donGia/soBuoiCoDinh
+   ảnh hưởng tới Tổng/Còn lại/Trạng thái của chính dòng đó và các ô tổng hợp cuối bảng). */
+function liveUpdateComputedCells(el){
+  const arrName = el.dataset.array, id = el.dataset.id, field = el.dataset.field, type = el.dataset.type || 'text';
+  const row = state[arrName] && state[arrName].find(r=>r.id===id);
+  if(!row) return;
+
+  let val;
+  if(type==='money'){ val = parseMoney(el.value); }
+  else if(type==='number'){ val = parseInt(String(el.value).replace(/[^0-9-]/g,''),10) || 0; }
+  else { val = el.value; }
+  row[field] = val;
+  saveState();
+
+  if(arrName!=='bb') return; // hiện chỉ Ngân sách có cột tính toán phụ thuộc trực tiếp
+
+  const rows = computeBBRows();
+  const r = rows.find(x=>x.id===id);
+  if(!r) return;
+  const tr = el.closest('tr');
+  if(tr){
+    const tongCell = tr.querySelector('td[data-label="Tổng"]');
+    if(tongCell) tongCell.textContent = fmt(r.tong);
+    const daChiCell = tr.querySelector('td[data-label="Đã chi tháng này"]');
+    if(daChiCell) daChiCell.textContent = fmt(r.daChi);
+    const conLaiCell = tr.querySelector('td[data-label="Còn lại"]');
+    if(conLaiCell) conLaiCell.textContent = fmt(r.conLai);
+    const trangThaiCell = tr.querySelector('td[data-label="Trạng thái"] .pill');
+    if(trangThaiCell){
+      trangThaiCell.textContent = r.conLai>=0 ? 'OK' : 'Vượt';
+      trangThaiCell.classList.toggle('ok', r.conLai>=0);
+      trangThaiCell.classList.toggle('warn', r.conLai<0);
+    }
+  }
+
+  const sum = computeBBSummary(rows);
+  const setSum = (id, text)=>{ const e2 = document.getElementById(id); if(e2) e2.textContent = text; };
+  setSum('bbSumDaDung', fmt(sum.soTienDaDung));
+  setSum('bbSumTrongThangCan', fmt(sum.soTienTrongThangCan));
+  setSum('bbSumThucTeCanSuDung', fmt(sum.soTienThucTeCanSuDung));
+  const vuotEl = document.getElementById('bbSumVuotQua');
+  if(vuotEl){ vuotEl.textContent = fmt(sum.vuotQua); vuotEl.style.color = sum.vuotQua>0 ? '#EF4444' : 'inherit'; }
+  setSum('bbSumCan', fmt(sum.soTienCan));
+}
 
 /* Bấm vào ô tiền là chọn hết nội dung sẵn có, để gõ số mới là thay thế luôn — đỡ phải xoá tay */
 document.addEventListener('focusin', e=>{
