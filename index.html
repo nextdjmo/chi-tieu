@@ -323,6 +323,31 @@
   }
   .quick-add-submit:active{background:#3D33C9;}
 
+  /* ---------- Month navigator (Tổng quan) ---------- */
+  .month-nav{
+    display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;
+  }
+  .month-nav-btn{
+    appearance:none; border:1px solid var(--line); background:var(--white); color:var(--ink);
+    width:38px; height:38px; border-radius:50%; cursor:pointer; font-size:16px; font-weight:600;
+    display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  .month-nav-btn:hover{border-color:var(--brass); color:var(--brass);}
+  .month-nav-label{
+    font-family:'Fraunces',serif; font-weight:600; font-size:16px; min-width:120px; text-align:center; flex:0 0 auto;
+  }
+  .month-nav-today{
+    appearance:none; border:1px solid var(--line); background:var(--paper-2); color:var(--ink-soft);
+    height:34px; padding:0 13px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer;
+  }
+  .month-nav-today:hover{border-color:var(--brass); color:var(--brass);}
+  .month-nav-badge{
+    font-size:11px; font-weight:700; letter-spacing:.03em; padding:3px 10px; border-radius:999px;
+  }
+  .month-nav-badge.future{background:var(--brass-soft); color:#3730A3;}
+  .month-nav-badge.past{background:var(--paper-2); color:var(--ink-soft);}
+  .month-nav-badge.now{background:var(--jade-bg); color:var(--jade);}
+
   /* ==========================================================
      MOBILE (primary usage surface for this app)
      ========================================================== */
@@ -376,6 +401,8 @@
 
     .fab-add{right:16px; bottom:18px; width:54px; height:54px;}
     .fab-top{left:14px; bottom:20px;}
+
+    .month-nav{justify-content:center;}
   }
 </style>
 </head>
@@ -480,7 +507,7 @@ function defaultState(){
     chotra: [],
     duno: [],
     vay: [],
-    ui:{ currentTab:'tccn', ctChiThangNay:false, duNoThangKhac:null, duNoNamKhac:null },
+    ui:{ currentTab:'tccn', ctChiThangNay:false, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null },
   };
 }
 
@@ -489,7 +516,9 @@ function loadState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){
       const parsed = JSON.parse(raw);
-      parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:false, duNoThangKhac:null, duNoNamKhac:null };
+      parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:false, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null };
+      if(parsed.ui.tccnViewThang===undefined) parsed.ui.tccnViewThang = null;
+      if(parsed.ui.tccnViewNam===undefined) parsed.ui.tccnViewNam = null;
       return parsed;
     }
   }catch(e){ console.warn('Không đọc được dữ liệu cũ, khởi tạo mới.', e); }
@@ -562,12 +591,32 @@ function isFirstSetup(){
     state.ct.length===0 && state.chovay.length===0 && state.chotra.length===0 &&
     state.duno.length===0 && state.vay.length===0;
 }
+/* Cộng/trừ số tháng vào một cặp (tháng, năm), tự động tràn qua năm khác */
+function addMonths(thang, nam, delta){
+  let idx = (thang-1) + delta;
+  let n = nam + Math.floor(idx/12);
+  let t = ((idx%12)+12)%12 + 1;
+  return {thang:t, nam:n};
+}
+/* So sánh 2 cặp (tháng,năm): âm nếu a<b, 0 nếu bằng, dương nếu a>b */
+function cmpMonth(t1,n1,t2,n2){
+  if(n1!==n2) return n1-n2;
+  return t1-t2;
+}
+/* Liệt kê tuần tự các tháng từ (t1,n1) đến (t2,n2), bao gồm cả 2 đầu — giả định t1/n1 <= t2/n2 */
+function monthsBetween(t1,n1,t2,n2){
+  const out=[]; let t=t1,n=n1; let guard=0;
+  while(cmpMonth(t,n,t2,n2)<=0 && guard<240){
+    out.push({thang:t,nam:n});
+    const nx = addMonths(t,n,1); t=nx.thang; n=nx.nam; guard++;
+  }
+  return out;
+}
 
 /* ==========================================================
    COMPUTED (mirrors công thức trong Google Sheet)
    ========================================================== */
-function computeBBRows(){
-  const {thang, nam} = state.meta;
+function computeBBRowsFor(thang, nam){
   return state.bb.map(row=>{
     const soBuoi = row.cheDo==='auto' ? weekdaysRemainingInMonth(nam, thang) : (Number(row.soBuoiCoDinh)||0);
     const tong = (Number(row.donGia)||0) * soBuoi;
@@ -576,6 +625,7 @@ function computeBBRows(){
     return {...row, soBuoi, tong, daChi, conLai};
   });
 }
+function computeBBRows(){ return computeBBRowsFor(state.meta.thang, state.meta.nam); }
 function computeBBSummary(rows){
   const sumTong = rows.reduce((s,r)=>s+r.tong,0);
   const sumConLai = rows.reduce((s,r)=>s+r.conLai,0);
@@ -594,22 +644,54 @@ function computeDuNoThang(thang, nam){
 function computeVayOutstanding(){ return state.vay.reduce((s,r)=> s + (!r.daHoanThanh ? (Number(r.soTien)||0) : 0), 0); }
 function computeCTAllTime(){ return state.ct.reduce((s,r)=> s + (Number(r.soTien)||0), 0); }
 
-function computeTCCN(){
-  const {thang, nam, tpbank, tienMat} = state.meta;
-  const bbRows = computeBBRows();
-  const bbSum = computeBBSummary(bbRows);
-  const duNoDUNO = computeDuNoThang(thang, nam);
-  const duNoVAY = computeVayOutstanding();
-  const tongDuNo = duNoDUNO + duNoVAY;
-  const soTienCanSuDungThang = bbSum.soTienCan;
+/* Số dư thực tế "hôm nay" — không phụ thuộc tháng đang xem ở Tổng quan */
+function computeSoDuHomNay(){
+  const {tpbank, tienMat} = state.meta;
   const chovayOutstanding = computeChoVayOutstanding();
   const chotraOutstanding = computeChoTraOutstanding();
   const chotraReceived = computeChoTraReceived();
   const ctAllTime = computeCTAllTime();
   const soDuHienTai = (Number(tpbank)||0) + (Number(tienMat)||0) - chovayOutstanding - ctAllTime + chotraReceived;
   const soDuDayDu = soDuHienTai + chotraOutstanding;
-  const buTru = soDuDayDu - tongDuNo - soTienCanSuDungThang;
-  return { tongDuNo, soTienCanSuDungThang, soDuHienTai, soDuDayDu, buTru, duNoDUNO, duNoVAY, chovayOutstanding, chotraOutstanding, chotraReceived };
+  return { chovayOutstanding, chotraOutstanding, chotraReceived, soDuHienTai, soDuDayDu };
+}
+
+/* Tính toán Tổng quan cho MỘT tháng bất kỳ đang được xem (viewThang/viewNam),
+   có tính luỹ kế từ tháng hiện tại (meta.thang/nam) tới tháng đang xem để dự phóng
+   xem cần chuẩn bị bao nhiêu tiền mới đủ trả nợ + chi tiêu tới lúc đó. */
+function computeTCCNForMonth(viewThang, viewNam){
+  const curThang = state.meta.thang, curNam = state.meta.nam;
+  const base = computeSoDuHomNay();
+  const duNoVAY = computeVayOutstanding();
+
+  // Số liệu riêng của tháng đang xem
+  const bbRowsXem = computeBBRowsFor(viewThang, viewNam);
+  const bbSumXem = computeBBSummary(bbRowsXem);
+  const duNoThangXem = computeDuNoThang(viewThang, viewNam);
+  const tongCanThangXem = bbSumXem.soTienCan + duNoThangXem;
+
+  // Luỹ kế từ tháng hiện tại đến tháng đang xem (chỉ có ý nghĩa nếu xem >= tháng hiện tại)
+  const isFutureOrCurrent = cmpMonth(viewThang, viewNam, curThang, curNam) >= 0;
+  let months = [], cumNganSach = 0, cumDuNo = 0;
+  if(isFutureOrCurrent){
+    months = monthsBetween(curThang, curNam, viewThang, viewNam);
+    months.forEach(m=>{
+      const rows = (m.thang===viewThang && m.nam===viewNam) ? bbRowsXem : computeBBRowsFor(m.thang, m.nam);
+      const s = computeBBSummary(rows);
+      cumNganSach += s.soTienCan;
+      cumDuNo += computeDuNoThang(m.thang, m.nam);
+    });
+  }
+  const tongCanLuyKe = cumNganSach + cumDuNo;
+  // Dự kiến số dư còn lại nếu phải tự trang trải toàn bộ ngân sách + nợ đến hạn từ giờ đến hết tháng đang xem
+  const buTruDuKien = base.soDuDayDu - duNoVAY - tongCanLuyKe;
+
+  return {
+    isFutureOrCurrent, months,
+    bbSumXem, duNoThangXem, tongCanThangXem,
+    duNoVAY, cumNganSach, cumDuNo, tongCanLuyKe, buTruDuKien,
+    ...base,
+  };
 }
 
 /* ==========================================================
@@ -675,41 +757,92 @@ function viewSetupPanel(highlight){
 }
 
 function viewTCCN(){
-  const t = computeTCCN();
-  const thieuHut = t.buTru < 0;
+  const curThang = state.meta.thang, curNam = state.meta.nam;
+  const viewThang = state.ui.tccnViewThang ?? curThang;
+  const viewNam = state.ui.tccnViewNam ?? curNam;
+  const rel = cmpMonth(viewThang, viewNam, curThang, curNam); // <0 quá khứ, 0 hiện tại, >0 tương lai
+
+  const t = computeTCCNForMonth(viewThang, viewNam);
   const firstSetup = isFirstSetup();
 
   const setupBanner = firstSetup ? `
   <div class="banner setup">👋 <div><b>Bắt đầu tại đây:</b> nhập số tiền bạn đang có (TPBank + tiền mặt) vào ô bên dưới. Chỉ cần nhập một lần — từ giờ về sau, sổ sẽ tự tính số dư của bạn dựa trên các khoản chi tiêu, cho vay và chờ thu mà bạn ghi lại.</div></div>
   ` : '';
 
-  const statusBanner = !firstSetup ? (thieuHut ? `
-  <div class="banner warn">⚠️ <div><b>Bù trừ đang âm ${fmt(Math.abs(t.buTru))}.</b> Sau khi trừ nợ đến hạn tháng ${state.meta.thang}/${state.meta.nam} và ngân sách còn lại, bạn đang thiếu hụt so với nhu cầu chi tiêu tháng này.</div></div>
-  ` : `
-  <div class="banner ok">✓ Bù trừ đang dương ${fmt(t.buTru)} — đủ trang trải nợ đến hạn và chi tiêu còn lại trong tháng.</div>
-  `) : '';
+  const badge = rel>0 ? '<span class="month-nav-badge future">Tương lai</span>'
+    : rel<0 ? '<span class="month-nav-badge past">Đã qua</span>'
+    : '<span class="month-nav-badge now">Tháng hiện tại</span>';
 
-  const cardsBlock = `
+  const monthNav = `
+  <div class="month-nav">
+    <button type="button" class="month-nav-btn" id="tccnPrevMonth" title="Tháng trước" aria-label="Tháng trước">‹</button>
+    <div class="month-nav-label mono">Tháng ${viewThang}/${viewNam}</div>
+    <button type="button" class="month-nav-btn" id="tccnNextMonth" title="Tháng sau" aria-label="Tháng sau">›</button>
+    ${badge}
+    ${rel!==0 ? '<button type="button" class="month-nav-today" id="tccnTodayMonth">↺ Về tháng hiện tại</button>' : ''}
+  </div>`;
+
+  const thieuHutThang = (t.bbSumXem.soTienCan + t.duNoThangXem - (rel===0 ? t.soDuDayDu - t.duNoVAY : 0)) ; // không dùng trực tiếp, giữ chỗ
+
+  const thieuHutDuKien = t.buTruDuKien < 0;
+
+  const statusBanner = !firstSetup ? (
+    rel === 0 ? (thieuHutDuKien ? `
+    <div class="banner warn">⚠️ <div><b>Bù trừ đang âm ${fmt(Math.abs(t.buTruDuKien))}.</b> Sau khi trừ nợ đến hạn tháng ${viewThang}/${viewNam} và ngân sách còn lại, bạn đang thiếu hụt so với nhu cầu chi tiêu tháng này.</div></div>
+    ` : `
+    <div class="banner ok">✓ Bù trừ đang dương ${fmt(t.buTruDuKien)} — đủ trang trải nợ đến hạn và chi tiêu còn lại trong tháng.</div>
+    `) : rel > 0 ? (thieuHutDuKien ? `
+    <div class="banner warn">⚠️ <div><b>Tính từ giờ đến hết tháng ${viewThang}/${viewNam}, bạn cần chuẩn bị thêm ${fmt(Math.abs(t.buTruDuKien))}</b> mới đủ trả nợ đến hạn và chi tiêu của cả ${t.months.length} tháng (kể cả tháng hiện tại). Hãy tiết kiệm thêm hoặc giảm chi để bù khoản này.</div></div>
+    ` : `
+    <div class="banner ok">✓ Nếu không phát sinh gì thêm, bạn còn dư dự kiến ${fmt(t.buTruDuKien)} tính đến hết tháng ${viewThang}/${viewNam} — đủ khả năng trả nợ và chi tiêu cho ${t.months.length} tháng tới.</div>
+    `) : `
+    <div class="banner info">Bạn đang xem lại tháng ${viewThang}/${viewNam} (đã qua) — số liệu bên dưới là ngân sách/dư nợ thực tế của tháng đó, không tính dự phóng.</div>
+    `
+  ) : '';
+
+  const cardsBlock = rel===0 || rel<0 ? `
   <div class="cards">
     <div class="card brass">
-      <div class="card-label">Số dư đầy đủ</div>
+      <div class="card-label">Số dư đầy đủ (hôm nay)</div>
       <div class="card-value">${fmt(t.soDuDayDu)}</div>
     </div>
     <div class="card rust">
-      <div class="card-label">Tổng dư nợ (tháng ${state.meta.thang}/${state.meta.nam})</div>
-      <div class="card-value">${fmt(t.tongDuNo)}</div>
+      <div class="card-label">Dư nợ đến hạn tháng ${viewThang}/${viewNam}</div>
+      <div class="card-value">${fmt(t.duNoThangXem)}</div>
     </div>
     <div class="card brass">
-      <div class="card-label">Số tiền cần dùng trong tháng</div>
-      <div class="card-value">${fmt(t.soTienCanSuDungThang)}</div>
+      <div class="card-label">Ngân sách cần dùng tháng ${viewThang}/${viewNam}</div>
+      <div class="card-value">${fmt(t.bbSumXem.soTienCan)}</div>
     </div>
     <div class="card jade">
-      <div class="card-label">Số dư hiện tại</div>
-      <div class="card-value jade">${fmt(t.soDuHienTai)}</div>
+      <div class="card-label">Tổng cần cho tháng ${viewThang}/${viewNam}</div>
+      <div class="card-value jade">${fmt(t.tongCanThangXem)}</div>
     </div>
-    <div class="card ${thieuHut?'rust':'jade'}">
-      <div class="card-label">Bù trừ</div>
-      <div class="card-value ${thieuHut?'rust':'jade'}">${fmt(t.buTru)}</div>
+    <div class="card ${thieuHutDuKien?'rust':'jade'}">
+      <div class="card-label">Bù trừ${rel===0?'':' (tháng đã qua)'}</div>
+      <div class="card-value ${thieuHutDuKien?'rust':'jade'}">${fmt(t.buTruDuKien)}</div>
+    </div>
+  </div>` : `
+  <div class="cards">
+    <div class="card brass">
+      <div class="card-label">Số dư đầy đủ (hôm nay)</div>
+      <div class="card-value">${fmt(t.soDuDayDu)}</div>
+    </div>
+    <div class="card rust">
+      <div class="card-label">Dư nợ đến hạn tháng ${viewThang}/${viewNam}</div>
+      <div class="card-value">${fmt(t.duNoThangXem)}</div>
+    </div>
+    <div class="card brass">
+      <div class="card-label">Ngân sách cần dùng tháng ${viewThang}/${viewNam}</div>
+      <div class="card-value">${fmt(t.bbSumXem.soTienCan)}</div>
+    </div>
+    <div class="card rust">
+      <div class="card-label">Tổng cần cộng dồn (${t.months.length} tháng, kể cả nay)</div>
+      <div class="card-value">${fmt(t.tongCanLuyKe)}</div>
+    </div>
+    <div class="card ${thieuHutDuKien?'rust':'jade'}">
+      <div class="card-label">Dự kiến dư/thiếu đến hết tháng ${viewThang}/${viewNam}</div>
+      <div class="card-value ${thieuHutDuKien?'rust':'jade'}">${fmt(t.buTruDuKien)}</div>
     </div>
   </div>`;
 
@@ -717,23 +850,53 @@ function viewTCCN(){
 
   const summaryChips = `
   <div class="panel">
-    <h3 style="margin-bottom:14px;">Đang chờ xử lý</h3>
+    <h3 style="margin-bottom:14px;">Đang chờ xử lý (hôm nay)</h3>
     <div class="summary-row">
       <div class="summary-chip">Đang cho vay chưa thu<b>${fmt(t.chovayOutstanding)}</b></div>
       <div class="summary-chip">Đang chờ thu về<b>${fmt(t.chotraOutstanding)}</b></div>
-      <div class="summary-chip">Trả góp đến hạn tháng này<b>${fmt(t.duNoDUNO)}</b></div>
-      <div class="summary-chip">Khoản vay chưa trả<b>${fmt(t.duNoVAY)}</b></div>
+      <div class="summary-chip">Dư nợ trả góp đến hạn tháng ${viewThang}/${viewNam}<b>${fmt(t.duNoThangXem)}</b></div>
+      <div class="summary-chip">Khoản vay chưa trả (không theo tháng)<b>${fmt(t.duNoVAY)}</b></div>
     </div>
   </div>`;
 
+  const projectionDetail = rel>0 ? `
+  <div class="panel">
+    <h3 style="margin-bottom:6px;">Chi tiết dự phóng từ tháng ${curThang}/${curNam} đến tháng ${viewThang}/${viewNam}</h3>
+    <p class="hint">Cộng dồn ngân sách còn cần và dư nợ trả góp đến hạn của từng tháng trong khoảng này, để biết tổng cộng bạn cần chuẩn bị bao nhiêu trước khi tới tháng ${viewThang}/${viewNam}.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Tháng</th><th class="num">Ngân sách cần</th><th class="num">Dư nợ đến hạn</th><th class="num">Tổng cần</th></tr></thead>
+        <tbody>
+          ${t.months.map(m=>{
+            const rows = computeBBRowsFor(m.thang, m.nam);
+            const s = computeBBSummary(rows);
+            const dn = computeDuNoThang(m.thang, m.nam);
+            return `<tr>
+              <td data-label="Tháng" class="mono">${m.thang}/${m.nam}</td>
+              <td class="num mono" data-label="Ngân sách cần">${fmt(s.soTienCan)}</td>
+              <td class="num mono" data-label="Dư nợ đến hạn">${fmt(dn)}</td>
+              <td class="num mono" data-label="Tổng cần">${fmt(s.soTienCan+dn)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="summary-row">
+      <div class="summary-chip">Tổng ngân sách cộng dồn<b>${fmt(t.cumNganSach)}</b></div>
+      <div class="summary-chip">Tổng dư nợ trả góp cộng dồn<b>${fmt(t.cumDuNo)}</b></div>
+      <div class="summary-chip">Khoản vay chưa trả (cộng thêm luôn, không theo tháng)<b>${fmt(t.duNoVAY)}</b></div>
+      <div class="summary-chip">Cần chuẩn bị tổng cộng<b>${fmt(t.tongCanLuyKe + t.duNoVAY)}</b></div>
+    </div>
+  </div>` : '';
+
   const header = `
   <div class="section-title">Tổng quan</div>
-  <p class="section-sub">Bức tranh tài chính tổng hợp từ toàn bộ các sổ — tự động cập nhật theo tháng/năm bên dưới.</p>`;
+  <p class="section-sub">Bức tranh tài chính tổng hợp — dùng nút ‹ › để xem trước ngân sách và nợ đến hạn của các tháng tương lai, giúp tính ra cần tiết kiệm bao nhiêu mới đủ trả nợ.</p>`;
 
   if(firstSetup){
-    return header + setupBanner + setupPanel + cardsBlock + summaryChips;
+    return header + monthNav + setupBanner + setupPanel + cardsBlock + summaryChips;
   }
-  return header + statusBanner + cardsBlock + setupPanel + summaryChips;
+  return header + monthNav + statusBanner + cardsBlock + projectionDetail + setupPanel + summaryChips;
 }
 
 /* ==========================================================
@@ -972,7 +1135,7 @@ function viewDuNo(){
 
   return `
   <div class="section-title">Dư nợ trả góp</div>
-  <p class="section-sub">Các khoản nợ trả góp theo kỳ (VD: TPBank, Shopee...) — tự động cộng vào "Tổng dư nợ" ở Tổng quan theo đúng tháng hiện tại.</p>
+  <p class="section-sub">Các khoản nợ trả góp theo kỳ (VD: TPBank, Shopee...) — tự động cộng vào "Tổng dư nợ" ở Tổng quan theo đúng tháng hiện tại. Mẹo: sang tab <b>Tổng quan</b> và bấm nút ‹ › để xem trước dư nợ + ngân sách của các tháng tương lai.</p>
 
   <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
     <div class="card rust">
@@ -1218,6 +1381,28 @@ document.addEventListener('click', e=>{
     return;
   }
 
+  // Điều hướng tháng ở Tổng quan
+  if(e.target.id==='tccnPrevMonth' || e.target.closest && e.target.closest('#tccnPrevMonth')){
+    const curThang = state.meta.thang, curNam = state.meta.nam;
+    const viewThang = state.ui.tccnViewThang ?? curThang;
+    const viewNam = state.ui.tccnViewNam ?? curNam;
+    const prev = addMonths(viewThang, viewNam, -1);
+    state.ui.tccnViewThang = prev.thang; state.ui.tccnViewNam = prev.nam;
+    saveState(); renderAll(); return;
+  }
+  if(e.target.id==='tccnNextMonth' || e.target.closest && e.target.closest('#tccnNextMonth')){
+    const curThang = state.meta.thang, curNam = state.meta.nam;
+    const viewThang = state.ui.tccnViewThang ?? curThang;
+    const viewNam = state.ui.tccnViewNam ?? curNam;
+    const next = addMonths(viewThang, viewNam, 1);
+    state.ui.tccnViewThang = next.thang; state.ui.tccnViewNam = next.nam;
+    saveState(); renderAll(); return;
+  }
+  if(e.target.id==='tccnTodayMonth' || e.target.closest && e.target.closest('#tccnTodayMonth')){
+    state.ui.tccnViewThang = null; state.ui.tccnViewNam = null;
+    saveState(); renderAll(); return;
+  }
+
   if(e.target.id==='btnExport'){
     const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
     const url = URL.createObjectURL(blob);
@@ -1307,7 +1492,7 @@ document.addEventListener('change', e=>{
           return;
         }
         if(confirm('Khôi phục sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại. Tiếp tục?')){
-          parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:false, duNoThangKhac:null, duNoNamKhac:null };
+          parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:false, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null };
           state = parsed;
           saveState(); renderAll();
         }
