@@ -145,6 +145,7 @@
   .card-value{font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:600; font-variant-numeric:tabular-nums; line-height:1.2;}
   .card-value.jade{color:var(--jade);}
   .card-value.rust{color:var(--rust);}
+  .card-sub{font-size:11px; color:var(--ink-soft); margin-top:4px; line-height:1.3;}
 
   .banner{
     border-radius:var(--r-sm); padding:12px 14px; font-size:13px; margin-bottom:16px;
@@ -575,14 +576,28 @@ function inMonth(dateStr, month, year){
 function weekdaysRemainingInMonth(year, month){
   const now = new Date();
   const isActualCurrent = (now.getFullYear()===year && (now.getMonth()+1)===month);
-  const startDay = isActualCurrent ? now.getDate() : 1;
-  const lastDay = new Date(year, month, 0).getDate();
-  let count=0;
-  for(let d=startDay; d<=lastDay; d++){
-    const dow = new Date(year, month-1, d).getDay();
+  const startDate = isActualCurrent ? new Date(year, month-1, now.getDate()) : new Date(year, month-1, 1);
+  const next = addMonths(month, year, 1);
+  const endDate = new Date(next.nam, next.thang-1, 11); // chu kỳ tháng kết thúc vào ngày 11 tháng sau
+  let count = 0;
+  for(let d = new Date(startDate); d <= endDate; d.setDate(d.getDate()+1)){
+    const dow = d.getDay();
     if(dow>=1 && dow<=5) count++;
   }
   return count;
+}
+function daysRemainingInCycle(){
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = cycleEndDate();
+  const diffDays = Math.round((end - today) / 86400000);
+  return Math.max(0, diffDays + 1); // tính cả hôm nay
+}
+function cycleEndDate(){
+  const now = new Date();
+  if(now.getDate() <= 11) return new Date(now.getFullYear(), now.getMonth(), 11);
+  const next = addMonths(now.getMonth()+1, now.getFullYear(), 1);
+  return new Date(next.nam, next.thang-1, 11);
 }
 function tenThang(m,y){ return m+'/'+y; }
 function isFirstSetup(){
@@ -846,6 +861,7 @@ function viewTCCN(){
     <div class="card brass">
       <div class="card-label">${ngsLabel} (tháng ${viewThang}/${viewNam})</div>
       <div class="card-value">${fmt(t.bbSumXem.soTienCanThucTe)}</div>
+      ${rel===0 ? `<div class="card-sub">Còn ${daysRemainingInCycle()} ngày (đến ${cycleEndDate().getDate()}/${cycleEndDate().getMonth()+1})</div>` : ''}
     </div>
     <div class="card jade">
       <div class="card-label">Tổng cần cho tháng ${viewThang}/${viewNam}</div>
