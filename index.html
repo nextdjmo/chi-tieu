@@ -508,7 +508,7 @@ function defaultState(){
     chotra: [],
     duno: [],
     vay: [],
-    ui:{ currentTab:'tccn', ctChiThangNay:false, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null },
+    ui:{ currentTab:'tccn', ctChiThangNay:true, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null, ctViewThang:null, ctViewNam:null },
   };
 }
 
@@ -517,9 +517,11 @@ function loadState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){
       const parsed = JSON.parse(raw);
-      parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:false, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null };
+      parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:true, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null, ctViewThang:null, ctViewNam:null };
       if(parsed.ui.tccnViewThang===undefined) parsed.ui.tccnViewThang = null;
       if(parsed.ui.tccnViewNam===undefined) parsed.ui.tccnViewNam = null;
+      if(parsed.ui.ctViewThang===undefined) parsed.ui.ctViewThang = null;
+      if(parsed.ui.ctViewNam===undefined) parsed.ui.ctViewNam = null;
       return parsed;
     }
   }catch(e){ console.warn('Không đọc được dữ liệu cũ, khởi tạo mới.', e); }
@@ -676,6 +678,11 @@ function computeDuNoThang(thang, nam){
 }
 function computeVayOutstanding(){ return state.vay.reduce((s,r)=> s + (!r.daHoanThanh ? (Number(r.soTien)||0) : 0), 0); }
 function computeCTAllTime(){ return state.ct.reduce((s,r)=> s + (Number(r.soTien)||0), 0); }
+/* Các khoản Dư nợ (trả góp) / Vay đã tick "Đã hoàn thành" — tức tiền đã thực sự rời khỏi
+   TPBank/tiền mặt để trả nợ, nên phải trừ vào số dư thực tế. Trước khi tick thì KHÔNG trừ,
+   vì đó mới chỉ là nghĩa vụ sắp tới chứ chưa phải tiền đã chi ra. */
+function computeDuNoPaid(){ return state.duno.reduce((s,r)=> s + (r.daHoanThanh ? (Number(r.soTien)||0) : 0), 0); }
+function computeVayPaid(){ return state.vay.reduce((s,r)=> s + (r.daHoanThanh ? (Number(r.soTien)||0) : 0), 0); }
 
 /* Số dư thực tế "hôm nay" — không phụ thuộc tháng đang xem ở Tổng quan */
 function computeSoDuHomNay(){
@@ -684,9 +691,11 @@ function computeSoDuHomNay(){
   const chotraOutstanding = computeChoTraOutstanding();
   const chotraReceived = computeChoTraReceived();
   const ctAllTime = computeCTAllTime();
-  const soDuHienTai = (Number(tpbank)||0) + (Number(tienMat)||0) - chovayOutstanding - ctAllTime + chotraReceived;
+  const duNoPaid = computeDuNoPaid();
+  const vayPaid = computeVayPaid();
+  const soDuHienTai = (Number(tpbank)||0) + (Number(tienMat)||0) - chovayOutstanding - ctAllTime + chotraReceived - duNoPaid - vayPaid;
   const soDuDayDu = soDuHienTai + chotraOutstanding;
-  return { chovayOutstanding, chotraOutstanding, chotraReceived, soDuHienTai, soDuDayDu };
+  return { chovayOutstanding, chotraOutstanding, chotraReceived, duNoPaid, vayPaid, soDuHienTai, soDuDayDu };
 }
 
 /* Tính toán Tổng quan cho MỘT tháng bất kỳ đang được xem (viewThang/viewNam),
@@ -976,10 +985,41 @@ function viewTCCN(){
    VIEW: Chi tiêu (CT)
    ========================================================== */
 function viewCT(){
-  const {thang, nam} = state.meta;
+  const curThang = state.meta.thang, curNam = state.meta.nam;
+  const viewThang = state.ui.ctViewThang ?? curThang;
+  const viewNam = state.ui.ctViewNam ?? curNam;
+  const rel = cmpMonth(viewThang, viewNam, curThang, curNam); // <0 quá khứ, 0 hiện tại, >0 tương lai
   const loaiOptions = state.bb.map(b=>b.loai);
   let rows = state.ct.slice().sort((a,b)=> (b.ngay||'').localeCompare(a.ngay||''));
-  if(state.ui.ctChiThangNay) rows = rows.filter(r=>inMonth(r.ngay, thang, nam));
+  if(state.ui.ctChiThangNay) rows = rows.filter(r=>inMonth(r.ngay, viewThang, viewNam));
+
+  // Thống kê nhanh của tháng đang xem: tổng tiền + tổng theo từng loại, để xem lại
+  // "tháng trước đã tiêu cái gì" một cách dễ dàng thay vì phải dò từng dòng.
+  let statsBlock = '';
+  if(state.ui.ctChiThangNay){
+    const tongThang = rows.reduce((s,r)=> s + (Number(r.soTien)||0), 0);
+    const byLoai = {};
+    rows.forEach(r=>{ byLoai[r.loai] = (byLoai[r.loai]||0) + (Number(r.soTien)||0); });
+    const loaiRows = Object.entries(byLoai).sort((a,b)=> b[1]-a[1]);
+    statsBlock = `
+    <div class="panel">
+      <h3>Thống kê tháng ${viewThang}/${viewNam}</h3>
+      <p class="hint">Tổng cộng <b class="mono">${fmt(tongThang)}</b> qua ${rows.length} khoản chi.</p>
+      ${loaiRows.length ? `<div class="summary-row">${loaiRows.map(([loai,tien])=>`<div class="summary-chip">${esc(loai)}<b>${fmt(tien)}</b></div>`).join('')}</div>` : ''}
+    </div>`;
+  }
+
+  const badge = rel>0 ? '<span class="month-nav-badge future">Tương lai</span>'
+    : rel<0 ? '<span class="month-nav-badge past">Đã qua</span>'
+    : '<span class="month-nav-badge now">Tháng hiện tại</span>';
+  const monthNav = state.ui.ctChiThangNay ? `
+  <div class="month-nav">
+    <button type="button" class="month-nav-btn" id="ctPrevMonth" title="Tháng trước" aria-label="Tháng trước">‹</button>
+    <div class="month-nav-label mono">Tháng ${viewThang}/${viewNam}</div>
+    <button type="button" class="month-nav-btn" id="ctNextMonth" title="Tháng sau" aria-label="Tháng sau">›</button>
+    ${badge}
+    ${rel!==0 ? '<button type="button" class="month-nav-today" id="ctTodayMonth">↺ Về tháng hiện tại</button>' : ''}
+  </div>` : '';
 
   const body = rows.length ? rows.map(r=>{
     const opts = loaiOptions.includes(r.loai) ? loaiOptions : [r.loai, ...loaiOptions];
@@ -995,7 +1035,7 @@ function viewCT(){
       </td>
       <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="ct" data-id="${r.id}" title="Xoá">✕</button></td>
     </tr>`;
-  }).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản chi nào${state.ui.ctChiThangNay?' trong tháng này':''}. Thêm khoản đầu tiên bằng nút + ở góc màn hình, hoặc bên dưới.</td></tr>`;
+  }).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản chi nào${state.ui.ctChiThangNay?` trong tháng ${viewThang}/${viewNam}`:''}. Thêm khoản đầu tiên bằng nút + ở góc màn hình, hoặc bên dưới.</td></tr>`;
 
   const addForm = `
     <form class="add-form" data-add="ct">
@@ -1008,13 +1048,15 @@ function viewCT(){
 
   return `
   <div class="section-title">Chi tiêu chi tiết</div>
-  <p class="section-sub">Ghi lại từng khoản chi hằng ngày — dùng để đối chiếu với ngân sách ở tab Ngân sách. Mẹo: bấm nút <b>+</b> ở góc màn hình để thêm nhanh từ bất kỳ đâu.</p>
+  <p class="section-sub">Ghi lại từng khoản chi hằng ngày — dùng nút ‹ › để xem lại các khoản đã chi của bất kỳ tháng nào trong quá khứ. Mẹo: bấm nút <b>+</b> ở góc màn hình để thêm nhanh từ bất kỳ đâu.</p>
 
   ${wrapAddForm('ct', 'Thêm khoản chi', addForm)}
 
   <div class="toolbar">
-    <label><input type="checkbox" id="ctFilterToggle" ${state.ui.ctChiThangNay?'checked':''}> Chỉ xem tháng ${thang}/${nam}</label>
+    <label><input type="checkbox" id="ctFilterToggle" ${state.ui.ctChiThangNay?'checked':''}> Xem theo từng tháng (bỏ tick để xem tất cả)</label>
   </div>
+  ${monthNav}
+  ${statsBlock}
 
   <div class="table-scroll">
     <table>
@@ -1492,6 +1534,28 @@ document.addEventListener('click', e=>{
     saveState(); renderAll(); return;
   }
 
+  // Điều hướng tháng ở Chi tiêu (xem lại lịch sử chi tiêu tháng trước)
+  if(e.target.id==='ctPrevMonth' || e.target.closest && e.target.closest('#ctPrevMonth')){
+    const curThang = state.meta.thang, curNam = state.meta.nam;
+    const viewThang = state.ui.ctViewThang ?? curThang;
+    const viewNam = state.ui.ctViewNam ?? curNam;
+    const prev = addMonths(viewThang, viewNam, -1);
+    state.ui.ctViewThang = prev.thang; state.ui.ctViewNam = prev.nam;
+    saveState(); renderAll(); return;
+  }
+  if(e.target.id==='ctNextMonth' || e.target.closest && e.target.closest('#ctNextMonth')){
+    const curThang = state.meta.thang, curNam = state.meta.nam;
+    const viewThang = state.ui.ctViewThang ?? curThang;
+    const viewNam = state.ui.ctViewNam ?? curNam;
+    const next = addMonths(viewThang, viewNam, 1);
+    state.ui.ctViewThang = next.thang; state.ui.ctViewNam = next.nam;
+    saveState(); renderAll(); return;
+  }
+  if(e.target.id==='ctTodayMonth' || e.target.closest && e.target.closest('#ctTodayMonth')){
+    state.ui.ctViewThang = null; state.ui.ctViewNam = null;
+    saveState(); renderAll(); return;
+  }
+
   if(e.target.id==='btnExport'){
     const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
     const url = URL.createObjectURL(blob);
@@ -1635,7 +1699,9 @@ document.addEventListener('change', e=>{
           return;
         }
         if(confirm('Khôi phục sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại. Tiếp tục?')){
-          parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:false, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null };
+          parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:true, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null, ctViewThang:null, ctViewNam:null };
+          if(parsed.ui.ctViewThang===undefined) parsed.ui.ctViewThang = null;
+          if(parsed.ui.ctViewNam===undefined) parsed.ui.ctViewNam = null;
           state = parsed;
           saveState(); renderAll();
         }
