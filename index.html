@@ -494,10 +494,11 @@ function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
 
 function defaultState(){
   const now = new Date();
+  const cm = cycleMonthOf(now);
   return {
     meta:{
-      thang: now.getMonth()+1,
-      nam: now.getFullYear(),
+      thang: cm.thang,
+      nam: cm.nam,
       ghiNhanNgay: todayStr(),
       tpbank: 0,
       tienMat: 0,
@@ -539,10 +540,10 @@ function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); 
    lùi về quá khứ, để không phá phần người dùng chủ động set trước sang tháng tương lai để xem trước. */
 function syncCurrentMonth(){
   const now = new Date();
-  const realThang = now.getMonth()+1, realNam = now.getFullYear();
-  if(cmpMonth(state.meta.thang, state.meta.nam, realThang, realNam) < 0){
-    state.meta.thang = realThang;
-    state.meta.nam = realNam;
+  const real = cycleMonthOf(now);
+  if(cmpMonth(state.meta.thang, state.meta.nam, real.thang, real.nam) < 0){
+    state.meta.thang = real.thang;
+    state.meta.nam = real.nam;
     state.meta.ghiNhanNgay = todayStr();
     saveState();
   }
@@ -587,18 +588,26 @@ function parseMoney(v){
 function esc(s){
   return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+/* Ngân sách tính theo "kỳ trả lương": kỳ của THÁNG M chạy từ ngày 11 tháng M đến hết ngày 10
+   tháng M+1 (không phải theo lịch dương 1–cuối tháng). Từ ngày 1–10 vẫn thuộc kỳ THÁNG TRƯỚC.
+   Hàm này quy một ngày bất kỳ (chi tiêu, hôm nay...) về đúng "tháng ngân sách" nó thuộc về. */
+function cycleMonthOf(date){
+  const d = date.getDate(), m = date.getMonth()+1, y = date.getFullYear();
+  return d>=11 ? {thang:m, nam:y} : addMonths(m, y, -1);
+}
 function inMonth(dateStr, month, year){
   if(!dateStr) return false;
   const d = new Date(dateStr+'T00:00:00');
   if(isNaN(d)) return false;
-  return d.getFullYear()===year && (d.getMonth()+1)===month;
+  const cm = cycleMonthOf(d);
+  return cm.nam===year && cm.thang===month;
 }
 function weekdaysRemainingInMonth(year, month){
   const now = new Date();
-  const isActualCurrent = (now.getFullYear()===year && (now.getMonth()+1)===month);
-  const startDate = isActualCurrent ? new Date(year, month-1, now.getDate()) : new Date(year, month-1, 1);
+  const isActualCurrent = cmpMonth(month, year, cycleMonthOf(now).thang, cycleMonthOf(now).nam)===0;
+  const startDate = isActualCurrent ? new Date(now.getFullYear(), now.getMonth(), now.getDate()) : new Date(year, month-1, 11);
   const next = addMonths(month, year, 1);
-  const endDate = new Date(next.nam, next.thang-1, 11); // chu kỳ tháng kết thúc vào ngày 11 tháng sau
+  const endDate = new Date(next.nam, next.thang-1, 10); // kỳ ngân sách kết thúc ngày 10 tháng sau (kỳ mới bắt đầu lại từ 11)
   let count = 0;
   for(let d = new Date(startDate); d <= endDate; d.setDate(d.getDate()+1)){
     const dow = d.getDay();
@@ -614,10 +623,9 @@ function daysRemainingInCycle(){
   return Math.max(0, diffDays + 1); // tính cả hôm nay
 }
 function cycleEndDate(){
-  const now = new Date();
-  if(now.getDate() <= 11) return new Date(now.getFullYear(), now.getMonth(), 11);
-  const next = addMonths(now.getMonth()+1, now.getFullYear(), 1);
-  return new Date(next.nam, next.thang-1, 11);
+  const cm = cycleMonthOf(new Date());
+  const next = addMonths(cm.thang, cm.nam, 1);
+  return new Date(next.nam, next.thang-1, 10);
 }
 function tenThang(m,y){ return m+'/'+y; }
 function isFirstSetup(){
