@@ -508,7 +508,7 @@ function defaultState(){
     chotra: [],
     duno: [],
     vay: [],
-    ui:{ currentTab:'tccn', ctChiThangNay:true, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null, ctViewThang:null, ctViewNam:null },
+    ui:{ currentTab:'tccn', ctChiThangNay:true, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null, ctViewThang:null, ctViewNam:null, bbViewThang:null, bbViewNam:null },
   };
 }
 
@@ -517,11 +517,13 @@ function loadState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){
       const parsed = JSON.parse(raw);
-      parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:true, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null, ctViewThang:null, ctViewNam:null };
+      parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:true, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null, ctViewThang:null, ctViewNam:null, bbViewThang:null, bbViewNam:null };
       if(parsed.ui.tccnViewThang===undefined) parsed.ui.tccnViewThang = null;
       if(parsed.ui.tccnViewNam===undefined) parsed.ui.tccnViewNam = null;
       if(parsed.ui.ctViewThang===undefined) parsed.ui.ctViewThang = null;
       if(parsed.ui.ctViewNam===undefined) parsed.ui.ctViewNam = null;
+      if(parsed.ui.bbViewThang===undefined) parsed.ui.bbViewThang = null;
+      if(parsed.ui.bbViewNam===undefined) parsed.ui.bbViewNam = null;
       return parsed;
     }
   }catch(e){ console.warn('Không đọc được dữ liệu cũ, khởi tạo mới.', e); }
@@ -530,6 +532,22 @@ function loadState(){
 
 let state = loadState();
 function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+/* Tự động đưa "Tháng hiện tại" (meta.thang/nam) khớp với tháng thật của máy mỗi khi mở app —
+   trước đây giá trị này chỉ được set 1 lần lúc khởi tạo rồi đứng yên mãi, khiến app luôn coi
+   tháng cũ là "tháng hiện tại" (Ngân sách/Chi tiêu không tự sang tháng mới). Chỉ đẩy TỚI, không
+   lùi về quá khứ, để không phá phần người dùng chủ động set trước sang tháng tương lai để xem trước. */
+function syncCurrentMonth(){
+  const now = new Date();
+  const realThang = now.getMonth()+1, realNam = now.getFullYear();
+  if(cmpMonth(state.meta.thang, state.meta.nam, realThang, realNam) < 0){
+    state.meta.thang = realThang;
+    state.meta.nam = realNam;
+    state.meta.ghiNhanNgay = todayStr();
+    saveState();
+  }
+}
+syncCurrentMonth();
 
 /* Trạng thái mở/đóng của các khối "+ Thêm ..." — không cần lưu vào localStorage */
 const addOpen = {};
@@ -1071,8 +1089,24 @@ function viewCT(){
    VIEW: Ngân sách (BB)
    ========================================================== */
 function viewBB(){
-  const rows = computeBBRows();
+  const curThang = state.meta.thang, curNam = state.meta.nam;
+  const viewThang = state.ui.bbViewThang ?? curThang;
+  const viewNam = state.ui.bbViewNam ?? curNam;
+  const rel = cmpMonth(viewThang, viewNam, curThang, curNam); // <0 quá khứ, 0 hiện tại, >0 tương lai
+  const rows = computeBBRowsFor(viewThang, viewNam);
   const sum = computeBBSummary(rows);
+
+  const badge = rel>0 ? '<span class="month-nav-badge future">Tương lai</span>'
+    : rel<0 ? '<span class="month-nav-badge past">Đã qua</span>'
+    : '<span class="month-nav-badge now">Tháng hiện tại</span>';
+  const monthNav = `
+  <div class="month-nav">
+    <button type="button" class="month-nav-btn" id="bbPrevMonth" title="Tháng trước" aria-label="Tháng trước">‹</button>
+    <div class="month-nav-label mono">Tháng ${viewThang}/${viewNam}</div>
+    <button type="button" class="month-nav-btn" id="bbNextMonth" title="Tháng sau" aria-label="Tháng sau">›</button>
+    ${badge}
+    ${rel!==0 ? '<button type="button" class="month-nav-today" id="bbTodayMonth">↺ Về tháng hiện tại</button>' : ''}
+  </div>`;
 
   const body = rows.length ? rows.map(r=>`
     <tr>
@@ -1115,7 +1149,9 @@ function viewBB(){
 
   return `
   <div class="section-title">Ngân sách theo hạng mục</div>
-  <p class="section-sub">Đơn giá × số buổi dự kiến trong tháng = ngân sách. "Ngày làm việc còn lại" tự đếm số ngày trong tuần (T2–T6) từ hôm nay đến cuối tháng. "Không giới hạn" dùng cho hạng mục không đặt trước số buổi (VD: đi chơi) — nhập thẳng <b>tổng ngân sách</b> vào ô "Đơn giá", chi vượt số đó vẫn báo Vượt như bình thường.</p>
+  <p class="section-sub">Đơn giá × số buổi dự kiến trong tháng = ngân sách. "Ngày làm việc còn lại" tự đếm số ngày trong tuần (T2–T6) từ hôm nay đến cuối tháng. "Không giới hạn" dùng cho hạng mục không đặt trước số buổi (VD: đi chơi) — nhập thẳng <b>tổng ngân sách</b> vào ô "Đơn giá", chi vượt số đó vẫn báo Vượt như bình thường. Dùng nút ‹ › để xem lại ngân sách/đã chi của các tháng trước.</p>
+
+  ${monthNav}
 
   ${wrapAddForm('bb', 'Thêm hạng mục', addForm)}
 
@@ -1123,7 +1159,7 @@ function viewBB(){
     <table>
       <thead><tr>
         <th>Loại</th><th class="num">Đơn giá</th><th>Chế độ số buổi</th><th class="num">Số buổi</th>
-        <th class="num">Tổng</th><th class="num">Số lần chi</th><th class="num">Đã chi tháng này</th><th class="num">Còn lại</th><th class="center">Trạng thái</th><th class="center">Xoá</th>
+        <th class="num">Tổng</th><th class="num">Số lần chi</th><th class="num">Đã chi tháng ${viewThang}/${viewNam}</th><th class="num">Còn lại</th><th class="center">Trạng thái</th><th class="center">Xoá</th>
       </tr></thead>
       <tbody>${body}</tbody>
     </table>
@@ -1556,6 +1592,28 @@ document.addEventListener('click', e=>{
     saveState(); renderAll(); return;
   }
 
+  // Điều hướng tháng ở Ngân sách (xem lại ngân sách/đã chi tháng trước)
+  if(e.target.id==='bbPrevMonth' || e.target.closest && e.target.closest('#bbPrevMonth')){
+    const curThang = state.meta.thang, curNam = state.meta.nam;
+    const viewThang = state.ui.bbViewThang ?? curThang;
+    const viewNam = state.ui.bbViewNam ?? curNam;
+    const prev = addMonths(viewThang, viewNam, -1);
+    state.ui.bbViewThang = prev.thang; state.ui.bbViewNam = prev.nam;
+    saveState(); renderAll(); return;
+  }
+  if(e.target.id==='bbNextMonth' || e.target.closest && e.target.closest('#bbNextMonth')){
+    const curThang = state.meta.thang, curNam = state.meta.nam;
+    const viewThang = state.ui.bbViewThang ?? curThang;
+    const viewNam = state.ui.bbViewNam ?? curNam;
+    const next = addMonths(viewThang, viewNam, 1);
+    state.ui.bbViewThang = next.thang; state.ui.bbViewNam = next.nam;
+    saveState(); renderAll(); return;
+  }
+  if(e.target.id==='bbTodayMonth' || e.target.closest && e.target.closest('#bbTodayMonth')){
+    state.ui.bbViewThang = null; state.ui.bbViewNam = null;
+    saveState(); renderAll(); return;
+  }
+
   if(e.target.id==='btnExport'){
     const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
     const url = URL.createObjectURL(blob);
@@ -1631,7 +1689,9 @@ function liveUpdateComputedCells(el){
 
   if(arrName!=='bb') return; // hiện chỉ Ngân sách có cột tính toán phụ thuộc trực tiếp
 
-  const rows = computeBBRows();
+  const viewThang = state.ui.bbViewThang ?? state.meta.thang;
+  const viewNam = state.ui.bbViewNam ?? state.meta.nam;
+  const rows = computeBBRowsFor(viewThang, viewNam);
   const r = rows.find(x=>x.id===id);
   if(!r) return;
   const tr = el.closest('tr');
