@@ -2,9 +2,14 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#1B2420">
+<!-- viewport-fit=cover: cho phép dùng env(safe-area-inset-*) để né Dynamic Island + thanh Home
+     của iPhone 16 Plus. Đã BỎ maximum-scale=1.0 vì iOS 10+ cố tình phớt lờ nó (lý do trợ năng),
+     giữ lại chỉ làm hỏng khả năng phóng to của người dùng mà không được lợi gì. Việc chống
+     "tự zoom khi bấm vào ô nhập" được xử lý đúng cách bằng font-size:16px cho mọi input. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#4338CA">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Sổ Chi Tiêu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,6 +41,17 @@
     --r-lg:18px;     /* bottom sheet */
     --gap:10px;
     --shadow:0 1px 2px rgba(30,42,60,.05), 0 3px 12px rgba(30,42,60,.06);
+
+    /* Safe-area của iPhone (Dynamic Island / thanh Home). Trên máy không có notch = 0px. */
+    --sa-top:env(safe-area-inset-top, 0px);
+    --sa-bottom:env(safe-area-inset-bottom, 0px);
+    --sa-left:env(safe-area-inset-left, 0px);
+    --sa-right:env(safe-area-inset-right, 0px);
+
+    /* Bảng màu cho biểu đồ theo hạng mục */
+    --c1:#4F46E5; --c2:#0EA5E9; --c3:#0EA968; --c4:#F59E0B;
+    --c5:#EF4444; --c6:#8B5CF6; --c7:#EC4899; --c8:#14B8A6;
+    --c9:#F97316; --c10:#64748B;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -47,7 +63,25 @@
     line-height:1.45;
     -webkit-font-smoothing:antialiased;
     min-height:100vh;
+    overscroll-behavior-y:none;          /* chặn "kéo quá đà" làm reload trang trên iOS */
+    -webkit-text-size-adjust:100%;       /* Safari không tự phóng chữ khi xoay ngang */
   }
+
+  /* ==========================================================
+     SỬA LỖI GỐC: NHẢY 2 THÁNG KHI BẤM MŨI TÊN (9 → 7)
+     ----------------------------------------------------------
+     Safari iOS mặc định chờ ~300ms sau mỗi lần chạm để xem người dùng có "chạm đúp
+     để phóng to" hay không. Trong 300ms đó nút trông như chết → người dùng theo phản
+     xạ chạm thêm phát nữa → 2 sự kiện click cùng bắn ra → tháng lùi 2 bước (9→8→7),
+     mà màn hình vẽ lại quá nhanh nên chỉ kịp thấy kết quả cuối là tháng 7.
+     touch-action:manipulation tắt hẳn cơ chế chạm-đúp-phóng-to ⇒ nút phản hồi tức thì,
+     không còn 300ms trễ, không còn cú chạm thừa.
+     ========================================================== */
+  button, a, label, summary, input, select, textarea, [role="button"], .tab-btn{
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button{ -webkit-user-select:none; user-select:none; }
   .mono{font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;}
   .money{font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; white-space:nowrap;}
   a{color:inherit;}
@@ -57,7 +91,7 @@
   header.masthead{
     background:var(--header-grad);
     color:#FFFFFF;
-    padding:16px 18px;
+    padding:calc(16px + var(--sa-top)) calc(18px + var(--sa-right)) 16px calc(18px + var(--sa-left));
     border-bottom:none;
   }
   .masthead-inner{
@@ -77,21 +111,26 @@
 
   /* ---------- Nav tabs ---------- */
   nav.tabs{
-    background:var(--panel);
+    background:rgba(255,255,255,.92);
+    -webkit-backdrop-filter:saturate(180%) blur(12px);
+    backdrop-filter:saturate(180%) blur(12px);
     border-bottom:1px solid var(--line);
     position:sticky; top:0; z-index:20;
     box-shadow:var(--shadow);
+    padding-left:var(--sa-left); padding-right:var(--sa-right);
   }
   .tabs-inner{
     max-width:1080px; margin:0 auto;
     display:flex; overflow-x:auto; scrollbar-width:none;
     -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
   }
   .tabs-inner::-webkit-scrollbar{display:none;}
   .tab-btn{
     appearance:none; border:none; background:transparent; cursor:pointer;
     font-family:'Inter',sans-serif; font-weight:600; font-size:13px;
-    color:var(--ink-soft); padding:12px 15px; white-space:nowrap;
+    color:var(--ink-soft); padding:13px 15px; white-space:nowrap;
+    min-height:46px;                     /* ≥44px: chuẩn vùng chạm của Apple HIG */
     border-bottom:2.5px solid transparent;
     transition:color .15s, border-color .15s, background .15s;
     flex-shrink:0;
@@ -118,7 +157,10 @@
   .add-form-wrap .add-form{border-top:none; background:var(--paper-2); border-radius:var(--r-sm);}
 
   /* ---------- Main ---------- */
-  main{max-width:1080px; margin:0 auto; padding:18px 16px 56px;}
+  main{
+    max-width:1080px; margin:0 auto;
+    padding:18px calc(16px + var(--sa-right)) calc(56px + var(--sa-bottom)) calc(16px + var(--sa-left));
+  }
   .section-title{
     font-family:'Fraunces',serif; font-weight:600; font-size:18px; margin:0 0 3px;
   }
@@ -261,8 +303,8 @@
 
   /* ---------- Floating quick-add button ---------- */
   .fab-add{
-    position:fixed; right:18px; bottom:22px; z-index:60;
-    width:52px; height:52px; border-radius:50%;
+    position:fixed; right:calc(18px + var(--sa-right)); bottom:calc(22px + var(--sa-bottom)); z-index:60;
+    width:56px; height:56px; border-radius:50%;
     background:var(--header-grad); color:#FFFFFF; border:none;
     font-size:26px; line-height:1; font-weight:500;
     display:flex; align-items:center; justify-content:center;
@@ -273,8 +315,8 @@
 
   /* ---------- Back-to-top floating button ---------- */
   .fab-top{
-    position:fixed; left:16px; bottom:24px; z-index:55;
-    width:38px; height:38px; border-radius:50%;
+    position:fixed; left:calc(16px + var(--sa-left)); bottom:calc(24px + var(--sa-bottom)); z-index:55;
+    width:44px; height:44px; border-radius:50%;
     background:rgba(250,250,246,.92); color:var(--ink-faint); border:1px solid var(--line-soft);
     font-size:16px; line-height:1; backdrop-filter:blur(3px);
     display:flex; align-items:center; justify-content:center;
@@ -296,8 +338,13 @@
   .quick-add-sheet{
     background:var(--panel); width:100%; max-width:460px;
     border-radius:var(--r-lg) var(--r-lg) 0 0; box-shadow:0 -4px 22px rgba(30,42,60,.22);
-    padding:6px 18px 20px; max-height:88vh; overflow-y:auto;
+    /* +safe-area: nút Lưu không bị thanh Home của iPhone đè lên */
+    padding:6px 18px calc(20px + var(--sa-bottom));
+    max-height:88vh; overflow-y:auto; overscroll-behavior:contain;
+    animation:sheetUp .22s cubic-bezier(.32,.72,0,1);
   }
+  @supports (max-height:88dvh){ .quick-add-sheet{max-height:88dvh;} }
+  @keyframes sheetUp{from{transform:translateY(18px); opacity:.5;} to{transform:translateY(0); opacity:1;}}
   .quick-add-grabber{width:36px; height:4px; background:var(--line); border-radius:99px; margin:9px auto 12px;}
   .quick-add-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
   .quick-add-head h3{margin:0; font-family:'Fraunces',serif; font-weight:600; font-size:16px;}
@@ -324,30 +371,164 @@
   }
   .quick-add-submit:active{background:#3D33C9;}
 
-  /* ---------- Month navigator (Tổng quan) ---------- */
+  /* ---------- Month navigator ---------- */
   .month-nav{
-    display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;
+    display:flex; align-items:center; gap:8px; margin-bottom:12px;
+    background:var(--panel); border:1px solid var(--line-soft); border-radius:var(--r-md);
+    box-shadow:var(--shadow); padding:7px 8px;
   }
   .month-nav-btn{
     appearance:none; border:1px solid var(--line); background:var(--white); color:var(--ink);
-    width:38px; height:38px; border-radius:50%; cursor:pointer; font-size:16px; font-weight:600;
+    width:44px; height:44px; border-radius:50%; cursor:pointer; font-size:20px; font-weight:600;
     display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;
+    transition:transform .08s ease, background .12s, border-color .12s;
   }
-  .month-nav-btn:hover{border-color:var(--brass); color:var(--brass);}
-  .month-nav-label{
-    font-family:'Fraunces',serif; font-weight:600; font-size:16px; min-width:120px; text-align:center; flex:0 0 auto;
+  .month-nav-btn:active{transform:scale(.9); background:var(--brass-soft); border-color:var(--brass);}
+  .month-nav-btn[disabled]{opacity:.32; pointer-events:none;}
+
+  /* Nhãn tháng giờ là một NÚT: chạm vào để bật bộ chọn tháng gốc của iOS, khỏi phải
+     bấm mũi tên nhiều lần khi muốn nhảy xa. */
+  .month-pick{
+    flex:1 1 auto; min-width:0; position:relative;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:44px; border:none; background:transparent; cursor:pointer; padding:0 4px;
+  }
+  .month-pick-main{
+    font-family:'Fraunces',serif; font-weight:600; font-size:17px; color:var(--ink);
+    line-height:1.15; white-space:nowrap;
+  }
+  .month-pick-main::after{content:' ⌄'; font-family:'Inter',sans-serif; font-size:12px; color:var(--ink-faint);}
+  .month-pick-sub{font-size:10.5px; font-weight:700; letter-spacing:.03em; margin-top:2px;}
+  .month-pick-sub.future{color:#3730A3;}
+  .month-pick-sub.past{color:var(--ink-soft);}
+  .month-pick-sub.now{color:var(--jade);}
+  /* input[type=month] trong suốt phủ lên nhãn → chạm đâu cũng mở bộ chọn tháng của iOS */
+  .month-pick input[type=month]{
+    position:absolute; inset:0; width:100%; height:100%;
+    opacity:0; border:none; background:transparent; -webkit-appearance:none; appearance:none;
   }
   .month-nav-today{
     appearance:none; border:1px solid var(--line); background:var(--paper-2); color:var(--ink-soft);
-    height:34px; padding:0 13px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer;
+    min-width:44px; height:44px; padding:0 10px; border-radius:999px; font-size:15px; font-weight:600; cursor:pointer;
+    flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
   }
-  .month-nav-today:hover{border-color:var(--brass); color:var(--brass);}
+  .month-nav-today:active{background:var(--brass-soft); color:var(--brass);}
   .month-nav-badge{
     font-size:11px; font-weight:700; letter-spacing:.03em; padding:3px 10px; border-radius:999px;
   }
   .month-nav-badge.future{background:var(--brass-soft); color:#3730A3;}
   .month-nav-badge.past{background:var(--paper-2); color:var(--ink-soft);}
   .month-nav-badge.now{background:var(--jade-bg); color:var(--jade);}
+
+  /* ---------- Segmented control (Theo ngày / Biểu đồ / Tất cả) ---------- */
+  .seg{
+    display:flex; background:var(--paper-2); border-radius:11px; padding:3px; gap:3px; margin-bottom:14px;
+    border:1px solid var(--line-soft);
+  }
+  .seg button{
+    appearance:none; border:none; background:transparent; cursor:pointer;
+    flex:1 1 0; min-width:0; height:38px; border-radius:9px;
+    font-size:13px; font-weight:600; color:var(--ink-soft);
+    display:inline-flex; align-items:center; justify-content:center; gap:5px;
+    transition:background .15s, color .15s, box-shadow .15s;
+  }
+  .seg button.active{background:var(--white); color:var(--brass); box-shadow:0 1px 3px rgba(30,42,60,.12);}
+  .seg button:active{transform:scale(.97);}
+
+  /* ---------- Dải tóm tắt nhanh ---------- */
+  .quickstats{display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-bottom:14px;}
+  .qs{
+    background:var(--panel); border:1px solid var(--line-soft); border-radius:var(--r-sm);
+    padding:9px 8px; text-align:center; box-shadow:var(--shadow); min-width:0;
+  }
+  .qs-label{font-size:9.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em; line-height:1.25;}
+  .qs-value{
+    font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px; margin-top:4px;
+    font-variant-numeric:tabular-nums; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .qs-value.rust{color:var(--rust);} .qs-value.jade{color:var(--jade);} .qs-value.brass{color:var(--brass);}
+
+  /* ---------- XEM THEO TỪNG NGÀY ---------- */
+  .day-card{
+    background:var(--panel); border:1px solid var(--line-soft); border-radius:var(--r-md);
+    box-shadow:var(--shadow); margin-bottom:9px; overflow:hidden;
+  }
+  .day-card.is-today{border-color:var(--brass); box-shadow:0 0 0 2px var(--brass-soft), var(--shadow);}
+  .day-head{
+    display:flex; align-items:center; gap:11px; width:100%;
+    padding:11px 13px; background:transparent; border:none; cursor:pointer; text-align:left;
+    min-height:56px;
+  }
+  .day-head:active{background:var(--paper-2);}
+  .day-datebox{
+    flex:0 0 auto; width:42px; text-align:center; line-height:1;
+  }
+  /* Các thẻ con bên trong <button> buộc phải là <span> (chuẩn HTML), nên phải ép
+     display:block thì margin/chiều cao/cắt chữ mới có tác dụng. */
+  .day-dd{display:block; font-family:'Fraunces',serif; font-weight:600; font-size:21px; color:var(--ink);}
+  .day-dow{display:block; font-size:9.5px; color:var(--ink-soft); font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-top:3px;}
+  .day-card.is-today .day-dd{color:var(--brass);}
+  .day-mid{flex:1 1 auto; min-width:0;}
+  .day-count{display:block; font-size:11.5px; color:var(--ink-soft); margin-bottom:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .day-meter{display:block; height:6px; border-radius:99px; background:var(--paper-2); overflow:hidden;}
+  .day-meter i{display:block; height:100%; border-radius:99px; background:var(--header-grad);}
+  .day-right{flex:0 0 auto; display:flex; align-items:center; gap:7px;}
+  .day-total{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:14px; white-space:nowrap;}
+  .day-chev{color:var(--ink-faint); font-size:11px; transition:transform .2s;}
+  .day-card.open .day-chev{transform:rotate(180deg);}
+  .day-items{display:none; border-top:1px solid var(--line-soft);}
+  .day-card.open .day-items{display:block;}
+
+  .txn{
+    display:flex; align-items:center; gap:10px; width:100%;
+    padding:11px 13px; border:none; background:transparent; cursor:pointer; text-align:left;
+    border-bottom:1px solid var(--line-soft); min-height:52px;
+  }
+  .txn:last-child{border-bottom:none;}
+  .txn:active{background:var(--paper-2);}
+  .txn-dot{flex:0 0 auto; width:9px; height:9px; border-radius:50%;}
+  .txn-body{flex:1 1 auto; min-width:0;}
+  .txn-name{display:block; font-size:13.5px; font-weight:500; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .txn-meta{display:block; font-size:11px; color:var(--ink-soft); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .txn-amt{
+    flex:0 0 auto; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13.5px;
+    white-space:nowrap; font-variant-numeric:tabular-nums;
+  }
+  .txn-edit{flex:0 0 auto; color:var(--ink-faint); font-size:12px;}
+
+  /* ---------- Biểu đồ ---------- */
+  .chart-panel{
+    background:var(--panel); border:1px solid var(--line-soft); border-radius:var(--r-md);
+    box-shadow:var(--shadow); padding:15px 14px 13px; margin-bottom:13px;
+  }
+  .chart-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:3px;}
+  .chart-title{font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin:0;}
+  .chart-note{font-size:11px; color:var(--ink-soft);}
+  .chart-sub{font-size:11.5px; color:var(--ink-soft); margin:0 0 12px; line-height:1.45;}
+  /* Để SVG tự co giãn ĐỀU theo chiều rộng. Nếu ép sẵn chiều cao bằng inline style thì
+     tỉ lệ khung hình lệch, chữ số ngày trong biểu đồ bị kéo bè ra trông rất xấu trên
+     màn hình rộng như iPhone 16 Plus. */
+  .chart-svg{display:block; width:100%; height:auto; overflow:visible;}
+  .chart-donut{display:block; width:auto; height:156px; margin:2px auto 0;}
+
+  .legend{margin-top:12px; display:flex; flex-direction:column; gap:9px;}
+  .legend-row{display:flex; align-items:center; gap:9px;}
+  .legend-dot{flex:0 0 auto; width:10px; height:10px; border-radius:3px;}
+  .legend-body{flex:1 1 auto; min-width:0;}
+  .legend-top{display:flex; justify-content:space-between; gap:8px; font-size:12px; margin-bottom:4px;}
+  .legend-name{color:var(--ink); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .legend-val{font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--ink); white-space:nowrap;}
+  .legend-bar{height:5px; border-radius:99px; background:var(--paper-2); overflow:hidden;}
+  .legend-bar i{display:block; height:100%; border-radius:99px;}
+  .legend-pct{font-size:10.5px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; flex:0 0 auto; width:38px; text-align:right;}
+
+  .bdg{display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:99px; margin-left:6px;}
+  .bdg.over{background:var(--rust-bg); color:var(--rust);}
+  .bdg.ok{background:var(--jade-bg); color:var(--jade);}
+
+  /* ---------- Sheet sửa khoản chi ---------- */
+  .sheet-actions{display:flex; gap:9px; margin-top:12px;}
+  .sheet-actions .btn{flex:1 1 0; height:46px;}
 
   /* ==========================================================
      MOBILE (primary usage surface for this app)
@@ -400,10 +581,38 @@
     .btn{width:100%;}
     .panel .btn{width:auto;}
 
-    .fab-add{right:16px; bottom:18px; width:54px; height:54px;}
-    .fab-top{left:14px; bottom:20px;}
+    .fab-add{right:calc(16px + var(--sa-right)); bottom:calc(18px + var(--sa-bottom));}
+    .fab-top{left:calc(14px + var(--sa-left)); bottom:calc(20px + var(--sa-bottom));}
 
-    .month-nav{justify-content:center;}
+    /* Vùng chạm ≥44px cho nút xoá trong bảng */
+    .btn-icon{width:40px; height:40px; font-size:18px;}
+    .quickstats{gap:6px;}
+    .qs{padding:8px 5px;}
+    .qs-value{font-size:12px;}
+  }
+
+  /* ==========================================================
+     iPhone 16 Plus (430 × 932 pt) và các máy cỡ tương đương
+     ========================================================== */
+  @media (max-width: 440px){
+    body{font-size:13.5px;}
+    main{padding-left:calc(13px + var(--sa-left)); padding-right:calc(13px + var(--sa-right));
+         padding-bottom:calc(96px + var(--sa-bottom));}
+    .cards{grid-template-columns:1fr 1fr;}
+    .qs-label{font-size:9px;}
+    .month-pick-main{font-size:16px;}
+    .day-dd{font-size:20px;}
+    /* Không cho bảng biểu đồ tràn ngang gây trượt trái/phải cả trang */
+    .chart-panel{overflow:hidden;}
+  }
+
+  /* Rất hẹp (iPhone SE / mini): tóm tắt nhanh xuống 2 hàng cho dễ đọc */
+  @media (max-width: 380px){
+    .quickstats{grid-template-columns:1fr 1fr;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.01ms !important; transition-duration:.01ms !important;}
   }
 </style>
 </head>
@@ -438,7 +647,7 @@
   <div class="quick-add-sheet">
     <div class="quick-add-grabber"></div>
     <div class="quick-add-head">
-      <h3>Thêm chi tiêu nhanh</h3>
+      <h3 id="quickAddTitle">Thêm chi tiêu nhanh</h3>
       <button class="quick-add-close" id="quickAddClose" aria-label="Đóng">✕</button>
     </div>
     <form id="quickAddForm">
@@ -458,7 +667,10 @@
         <label>Ngày</label>
         <input type="date" id="qaNgay" name="ngay" required>
       </div>
-      <button type="submit" class="quick-add-submit">+ Lưu khoản chi</button>
+      <button type="submit" class="quick-add-submit" id="quickAddSubmit">+ Lưu khoản chi</button>
+      <div class="sheet-actions" id="quickAddDeleteWrap" style="display:none">
+        <button type="button" class="btn danger" id="quickAddDelete">🗑 Xoá khoản chi này</button>
+      </div>
     </form>
   </div>
 </div>
@@ -508,22 +720,37 @@ function defaultState(){
     chotra: [],
     duno: [],
     vay: [],
-    ui:{ currentTab:'tccn', ctChiThangNay:true, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null, ctViewThang:null, ctViewNam:null },
+    ui: defaultUI(),
   };
+}
+
+/* Giá trị mặc định của phần giao diện. Gom về MỘT nơi để lúc nạp dữ liệu cũ hay lúc
+   khôi phục từ file JSON đều dùng chung, không còn chỗ quên chỗ nhớ như trước. */
+function defaultUI(){
+  return {
+    currentTab:'tccn',
+    ctChiThangNay:true,
+    duNoThangKhac:null, duNoNamKhac:null,
+    tccnViewThang:null, tccnViewNam:null,
+    ctViewThang:null, ctViewNam:null,
+    ctMode:'ngay',        // 'ngay' = xem từng ngày | 'chart' = biểu đồ | 'all' = tất cả
+    ctCollapsedDays:[],   // những ngày người dùng chủ động thu gọn
+  };
+}
+/* Bổ sung các trường UI còn thiếu vào dữ liệu cũ mà không đụng tới trường đã có */
+function migrateUI(obj){
+  obj.ui = obj.ui || {};
+  const d = defaultUI();
+  for(const k in d){ if(obj.ui[k]===undefined) obj.ui[k] = d[k]; }
+  if(!Array.isArray(obj.ui.ctCollapsedDays)) obj.ui.ctCollapsedDays = [];
+  if(!['ngay','chart','all'].includes(obj.ui.ctMode)) obj.ui.ctMode = 'ngay';
+  return obj;
 }
 
 function loadState(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      const parsed = JSON.parse(raw);
-      parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:true, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null, ctViewThang:null, ctViewNam:null };
-      if(parsed.ui.tccnViewThang===undefined) parsed.ui.tccnViewThang = null;
-      if(parsed.ui.tccnViewNam===undefined) parsed.ui.tccnViewNam = null;
-      if(parsed.ui.ctViewThang===undefined) parsed.ui.ctViewThang = null;
-      if(parsed.ui.ctViewNam===undefined) parsed.ui.ctViewNam = null;
-      return parsed;
-    }
+    if(raw) return migrateUI(JSON.parse(raw));
   }catch(e){ console.warn('Không đọc được dữ liệu cũ, khởi tạo mới.', e); }
   return defaultState();
 }
@@ -731,6 +958,10 @@ function computeTCCNForMonth(viewThang, viewNam){
 
   return {
     isFutureOrCurrent, months,
+    bbRowsXem, // ← THIẾU TRƯỚC ĐÂY: viewTCCN() có dùng biến này để liệt kê hạng mục vượt
+               //   ngân sách, nhưng nó chỉ là biến cục bộ trong hàm này nên không ra tới
+               //   nơi dùng → ReferenceError → cả tab Tổng quan TRẮNG TRƠN mỗi khi có
+               //   bất kỳ hạng mục nào chi vượt ngân sách.
     bbSumXem, duNoThangXem, tongCanThangXem,
     duNoVAY, cumNganSach, cumDuNo, tongCanLuyKe, buTruDuKien,
     ...base,
@@ -748,7 +979,12 @@ function renderTabs(){
   const el = document.getElementById('tabsInner');
   el.innerHTML = TABS.map(t=>`<button class="tab-btn ${state.ui.currentTab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
 }
-function renderAll(){
+/* keepScroll: giữ nguyên vị trí cuộn sau khi vẽ lại. Khi bấm mũi tên đổi tháng mà trang
+   nhảy vọt về đầu, người dùng tưởng nút không ăn và bấm thêm lần nữa — chính là cách cũ
+   làm cho tháng bị lùi 2 bước. */
+function renderAll(opts){
+  const keepScroll = !!(opts && opts.keepScroll);
+  const y = keepScroll ? window.scrollY : 0;
   renderMasthead();
   renderTabs();
   const app = document.getElementById('app');
@@ -762,6 +998,7 @@ function renderAll(){
     case 'vay': app.innerHTML = viewVay(); break;
     case 'data': app.innerHTML = viewData(); break;
   }
+  if(keepScroll) window.scrollTo(0, y);
 }
 
 /* ==========================================================
@@ -812,18 +1049,7 @@ function viewTCCN(){
   <div class="banner setup">👋 <div><b>Bắt đầu tại đây:</b> nhập số tiền bạn đang có (TPBank + tiền mặt) vào ô bên dưới. Chỉ cần nhập một lần — từ giờ về sau, sổ sẽ tự tính số dư của bạn dựa trên các khoản chi tiêu, cho vay và chờ thu mà bạn ghi lại.</div></div>
   ` : '';
 
-  const badge = rel>0 ? '<span class="month-nav-badge future">Tương lai</span>'
-    : rel<0 ? '<span class="month-nav-badge past">Đã qua</span>'
-    : '<span class="month-nav-badge now">Tháng hiện tại</span>';
-
-  const monthNav = `
-  <div class="month-nav">
-    <button type="button" class="month-nav-btn" id="tccnPrevMonth" title="Tháng trước" aria-label="Tháng trước">‹</button>
-    <div class="month-nav-label mono">Tháng ${viewThang}/${viewNam}</div>
-    <button type="button" class="month-nav-btn" id="tccnNextMonth" title="Tháng sau" aria-label="Tháng sau">›</button>
-    ${badge}
-    ${rel!==0 ? '<button type="button" class="month-nav-today" id="tccnTodayMonth">↺ Về tháng hiện tại</button>' : ''}
-  </div>`;
+  const monthNav = renderMonthNav('tccn', viewThang, viewNam, rel);
 
   const thieuHutDuKien = t.buTruDuKien < 0;
   const coVuotNganSach = t.bbSumXem.vuotQua > 0;
@@ -929,7 +1155,7 @@ function viewTCCN(){
       <table>
         <thead><tr><th>Hạng mục</th><th class="num">Ngân sách</th><th class="num">Đã chi</th><th class="num">Vượt</th></tr></thead>
         <tbody>
-          ${bbRowsXem.filter(r=>r.conLai<0).map(r=>`
+          ${t.bbRowsXem.filter(r=>r.conLai<0).map(r=>`
             <tr>
               <td data-label="Hạng mục">${esc(r.loai)}</td>
               <td class="num mono" data-label="Ngân sách">${fmt(r.tong)}</td>
@@ -982,60 +1208,418 @@ function viewTCCN(){
 }
 
 /* ==========================================================
+   HỖ TRỢ: NGÀY THÁNG + MÀU + BIỂU ĐỒ
+   ========================================================== */
+const DOW_FULL  = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+const DOW_SHORT = ['CN','T2','T3','T4','T5','T6','T7'];
+const CHART_COLORS = ['#4F46E5','#0EA5E9','#0EA968','#F59E0B','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316','#64748B'];
+
+function parseDate(s){ if(!s) return null; const d=new Date(s+'T00:00:00'); return isNaN(d)?null:d; }
+function daysInMonth(thang,nam){ return new Date(nam, thang, 0).getDate(); }
+function ymd(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+/* Màu ổn định cho từng hạng mục: ưu tiên theo thứ tự trong bảng Ngân sách để màu
+   không nhảy lung tung mỗi lần thêm/bớt khoản chi. */
+function catColor(loai){
+  const i = state.bb.findIndex(b=>b.loai===loai);
+  if(i>=0) return CHART_COLORS[i % CHART_COLORS.length];
+  let h = 0; const s = String(loai||'');
+  for(let k=0;k<s.length;k++) h = (h*31 + s.charCodeAt(k)) >>> 0;
+  return CHART_COLORS[h % CHART_COLORS.length];
+}
+/* Rút gọn số tiền cho nhãn biểu đồ (màn hình hẹp không đủ chỗ ghi đủ số) */
+function fmtShort(n){
+  n = Math.round(Number(n)||0);
+  const a = Math.abs(n);
+  if(a >= 1e9) return (n/1e9).toFixed(a>=1e10?0:1).replace(/\.0$/,'') + ' tỷ';
+  if(a >= 1e6) return (n/1e6).toFixed(a>=1e7?0:1).replace(/\.0$/,'') + ' tr';
+  if(a >= 1e3) return Math.round(n/1e3) + 'k';
+  return String(n);
+}
+/* Nhãn đầu mỗi thẻ ngày: "Hôm nay" / "Hôm qua" / thứ trong tuần */
+function dayHeadInfo(dateStr){
+  const d = parseDate(dateStr);
+  if(!d) return {dd:'—', dow:'', isToday:false};
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((today - d)/86400000);
+  let dow = DOW_SHORT[d.getDay()];
+  if(diff===0) dow = 'HÔM NAY';
+  else if(diff===1) dow = 'HÔM QUA';
+  return { dd:String(d.getDate()), dow, isToday:diff===0, full:DOW_FULL[d.getDay()], thang:d.getMonth()+1, nam:d.getFullYear() };
+}
+/* Gom danh sách khoản chi thành từng NGÀY, mới nhất lên trước */
+function groupByDay(rows){
+  const map = new Map();
+  rows.forEach(r=>{
+    const k = r.ngay || '';
+    if(!map.has(k)) map.set(k, []);
+    map.get(k).push(r);
+  });
+  return [...map.entries()]
+    .sort((a,b)=> b[0].localeCompare(a[0]))
+    .map(([ngay, items])=>({
+      ngay,
+      items: items.slice().sort((a,b)=> (Number(b.soTien)||0) - (Number(a.soTien)||0)),
+      tong: items.reduce((s,x)=> s + (Number(x.soTien)||0), 0),
+    }));
+}
+
+/* ---------- Biểu đồ 1: chi tiêu từng ngày trong tháng (cột) ---------- */
+function chartDaily(rowsOfMonth, viewThang, viewNam){
+  const nd = daysInMonth(viewThang, viewNam);
+  const totals = new Array(nd).fill(0);
+  rowsOfMonth.forEach(r=>{
+    const d = parseDate(r.ngay);
+    if(d) totals[d.getDate()-1] += Number(r.soTien)||0;
+  });
+  const sum = totals.reduce((a,b)=>a+b,0);
+  if(sum <= 0){
+    return `<div class="chart-panel"><h3 class="chart-title">Chi theo từng ngày</h3>
+      <p class="chart-sub" style="margin:8px 0 0">Tháng ${viewThang}/${viewNam} chưa có khoản chi nào để vẽ.</p></div>`;
+  }
+  const max = Math.max(...totals);
+  const soNgayCoChi = totals.filter(v=>v>0).length;
+  const tbNgayCoChi = sum / soNgayCoChi;
+  const maxIdx = totals.indexOf(max);
+
+  const W=320, H=136, TOP=6, BOT=20;
+  const plotH = H - TOP - BOT;
+  const gap = nd > 28 ? 2 : 2.6;
+  const barW = (W - gap*(nd-1))/nd;
+  const now = new Date();
+  const todayD = (now.getFullYear()===viewNam && now.getMonth()+1===viewThang) ? now.getDate() : -1;
+
+  const bars = totals.map((v,i)=>{
+    const x = i*(barW+gap);
+    const h = v>0 ? Math.max(3, (v/max)*plotH) : 2;
+    const y = TOP + plotH - h;
+    const fill = v<=0 ? '#E1E6F0' : ((i+1)===todayD ? '#F59E0B' : 'url(#gBar)');
+    return `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barW.toFixed(2)}" height="${h.toFixed(2)}" rx="${Math.min(2.4, barW/2).toFixed(2)}" fill="${fill}"/>`;
+  }).join('');
+
+  const avgY = TOP + plotH - (tbNgayCoChi/max)*plotH;
+  const ticks = [];
+  for(let d=1; d<=nd; d++){
+    if(d===1 || d%5===0){
+      const x = (d-1)*(barW+gap) + barW/2;
+      ticks.push(`<text x="${x.toFixed(2)}" y="${H-6}" text-anchor="middle" font-size="8.5" fill="#9AA6BA" font-family="IBM Plex Mono,monospace">${d}</text>`);
+    }
+  }
+
+  return `
+  <div class="chart-panel">
+    <div class="chart-head">
+      <h3 class="chart-title">Chi theo từng ngày</h3>
+      <span class="chart-note">Cao nhất ${fmtShort(max)}</span>
+    </div>
+    <p class="chart-sub">Ngày <b>${maxIdx+1}/${viewThang}</b> tiêu nhiều nhất (${fmt(max)}). Trung bình <b>${fmt(tbNgayCoChi)}</b>/ngày có chi — đường đứt đỏ.</p>
+    <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Biểu đồ cột chi tiêu từng ngày trong tháng ${viewThang}/${viewNam}">
+      <defs>
+        <linearGradient id="gBar" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4338CA"/><stop offset="100%" stop-color="#0EA5E9"/>
+        </linearGradient>
+      </defs>
+      ${bars}
+      <line x1="0" y1="${avgY.toFixed(2)}" x2="${W}" y2="${avgY.toFixed(2)}" stroke="#EF4444" stroke-width="1" stroke-dasharray="4 3" opacity=".7"/>
+      ${ticks.join('')}
+    </svg>
+  </div>`;
+}
+
+/* ---------- Biểu đồ 2: cơ cấu chi theo hạng mục (vành khuyên + thanh) ---------- */
+function chartCategory(rowsOfMonth, viewThang, viewNam){
+  const byLoai = {};
+  rowsOfMonth.forEach(r=>{ byLoai[r.loai] = (byLoai[r.loai]||0) + (Number(r.soTien)||0); });
+  const entries = Object.entries(byLoai).filter(([,v])=>v>0).sort((a,b)=> b[1]-a[1]);
+  const tong = entries.reduce((s,[,v])=>s+v,0);
+  if(!tong) return '';
+
+  const R=44, SW=17, CIRC=2*Math.PI*R;
+  let acc = 0;
+  const arcs = entries.map(([loai,v])=>{
+    const frac = v/tong;
+    const len = frac*CIRC;
+    const seg = `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${catColor(loai)}" stroke-width="${SW}"
+      stroke-dasharray="${(len-1.5).toFixed(2)} ${(CIRC-len+1.5).toFixed(2)}"
+      stroke-dashoffset="${(-acc).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="butt"/>`;
+    acc += len;
+    return seg;
+  }).join('');
+
+  const maxV = entries[0][1];
+  const legend = entries.map(([loai,v])=>`
+    <div class="legend-row">
+      <span class="legend-dot" style="background:${catColor(loai)}"></span>
+      <div class="legend-body">
+        <div class="legend-top">
+          <span class="legend-name">${esc(loai)}</span>
+          <span class="legend-val">${fmt(v)}</span>
+        </div>
+        <div class="legend-bar"><i style="width:${(v/maxV*100).toFixed(1)}%; background:${catColor(loai)}"></i></div>
+      </div>
+      <span class="legend-pct">${(v/tong*100).toFixed(0)}%</span>
+    </div>`).join('');
+
+  return `
+  <div class="chart-panel">
+    <div class="chart-head">
+      <h3 class="chart-title">Tiêu vào những gì</h3>
+      <span class="chart-note">${entries.length} hạng mục</span>
+    </div>
+    <p class="chart-sub"><b>${esc(entries[0][0])}</b> chiếm nhiều nhất — ${(entries[0][1]/tong*100).toFixed(0)}% tổng chi tháng ${viewThang}/${viewNam}.</p>
+    <svg class="chart-donut" viewBox="0 0 120 120" role="img" aria-label="Biểu đồ vành khuyên cơ cấu chi tiêu theo hạng mục">
+      <circle cx="60" cy="60" r="${R}" fill="none" stroke="#EDF1F9" stroke-width="${SW}"/>
+      ${arcs}
+      <text x="60" y="57" text-anchor="middle" font-size="9" fill="#9AA6BA" font-family="Inter,sans-serif">Tổng chi</text>
+      <text x="60" y="71" text-anchor="middle" font-size="14" font-weight="600" fill="#1E2A3C" font-family="IBM Plex Mono,monospace">${fmtShort(tong)}</text>
+    </svg>
+    <div class="legend">${legend}</div>
+  </div>`;
+}
+
+/* ---------- Biểu đồ 3: xu hướng 6 tháng gần nhất (chạm để nhảy tháng) ---------- */
+function chartTrend(viewThang, viewNam){
+  const months = [];
+  for(let i=5;i>=0;i--) months.push(addMonths(viewThang, viewNam, -i));
+  const vals = months.map(m=> state.ct.reduce((s,r)=> s + (inMonth(r.ngay, m.thang, m.nam) ? (Number(r.soTien)||0) : 0), 0));
+  const max = Math.max(...vals, 1);
+  if(vals.every(v=>v===0)) return '';
+
+  const W=320, H=128, TOP=16, BOT=20;
+  const plotH = H - TOP - BOT;
+  const gap = 10, n = months.length;
+  const barW = (W - gap*(n-1))/n;
+
+  const bars = months.map((m,i)=>{
+    const v = vals[i];
+    const x = i*(barW+gap);
+    const h = v>0 ? Math.max(3, (v/max)*plotH) : 2;
+    const y = TOP + plotH - h;
+    const isView = (m.thang===viewThang && m.nam===viewNam);
+    const fill = v<=0 ? '#E1E6F0' : (isView ? 'url(#gTrend)' : '#C7D2FE');
+    return `<g data-jump="${m.thang}-${m.nam}" style="cursor:pointer">
+      <rect x="${x.toFixed(2)}" y="0" width="${barW.toFixed(2)}" height="${H}" fill="transparent"/>
+      <rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barW.toFixed(2)}" height="${h.toFixed(2)}" rx="4" fill="${fill}"/>
+      <text x="${(x+barW/2).toFixed(2)}" y="${Math.max(10, y-5).toFixed(2)}" text-anchor="middle" font-size="9" font-weight="600"
+        fill="${isView?'#4338CA':'#9AA6BA'}" font-family="IBM Plex Mono,monospace">${v>0?fmtShort(v):'—'}</text>
+      <text x="${(x+barW/2).toFixed(2)}" y="${H-6}" text-anchor="middle" font-size="9"
+        fill="${isView?'#4338CA':'#9AA6BA'}" font-weight="${isView?'700':'400'}" font-family="IBM Plex Mono,monospace">T${m.thang}</text>
+    </g>`;
+  }).join('');
+
+  const prev = vals[4], cur = vals[5];
+  let delta = '';
+  if(prev>0 && cur>0){
+    const pct = (cur-prev)/prev*100;
+    delta = pct>=0
+      ? `Tăng <b style="color:var(--rust)">${pct.toFixed(0)}%</b> so với tháng trước.`
+      : `Giảm <b style="color:var(--jade)">${Math.abs(pct).toFixed(0)}%</b> so với tháng trước.`;
+  }
+
+  return `
+  <div class="chart-panel">
+    <div class="chart-head">
+      <h3 class="chart-title">Xu hướng 6 tháng</h3>
+      <span class="chart-note">chạm cột để xem</span>
+    </div>
+    <p class="chart-sub">${delta || 'Tổng chi của từng tháng, tính đến tháng đang xem.'}</p>
+    <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Biểu đồ xu hướng chi tiêu 6 tháng">
+      <defs>
+        <linearGradient id="gTrend" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4338CA"/><stop offset="100%" stop-color="#0EA5E9"/>
+        </linearGradient>
+      </defs>
+      ${bars}
+    </svg>
+  </div>`;
+}
+
+/* ---------- Biểu đồ 4: thực chi so với ngân sách từng hạng mục ---------- */
+function chartVsBudget(viewThang, viewNam){
+  const rows = computeBBRowsFor(viewThang, viewNam).filter(r=> r.tong>0 || r.daChi>0);
+  if(!rows.length) return '';
+  const soVuot = rows.filter(r=>r.conLai<0).length;
+
+  const list = rows.sort((a,b)=> (b.daChi/(b.tong||1)) - (a.daChi/(a.tong||1))).map(r=>{
+    const pct = r.tong>0 ? (r.daChi/r.tong*100) : (r.daChi>0?100:0);
+    const over = r.conLai < 0;
+    return `
+    <div class="legend-row">
+      <span class="legend-dot" style="background:${catColor(r.loai)}"></span>
+      <div class="legend-body">
+        <div class="legend-top">
+          <span class="legend-name">${esc(r.loai)}${over?'<span class="bdg over">vượt</span>':''}</span>
+          <span class="legend-val">${fmtShort(r.daChi)} / ${fmtShort(r.tong)}</span>
+        </div>
+        <div class="legend-bar">
+          <i style="width:${Math.min(100,pct).toFixed(1)}%; background:${over?'var(--rust)':catColor(r.loai)}"></i>
+        </div>
+      </div>
+      <span class="legend-pct" style="color:${over?'var(--rust)':'var(--ink-faint)'}">${pct.toFixed(0)}%</span>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="chart-panel">
+    <div class="chart-head">
+      <h3 class="chart-title">Thực chi vs ngân sách</h3>
+      <span class="chart-note">${soVuot?`${soVuot} hạng mục vượt`:'chưa vượt hạng mục nào'}</span>
+    </div>
+    <p class="chart-sub">Mỗi thanh là phần ngân sách tháng ${viewThang}/${viewNam} đã dùng hết. Thanh đỏ = đã tiêu quá mức đặt ra.</p>
+    <div class="legend">${list}</div>
+  </div>`;
+}
+
+/* ==========================================================
    VIEW: Chi tiêu (CT)
    ========================================================== */
+/* Thanh điều hướng tháng dùng chung cho cả Tổng quan và Chi tiêu.
+   `scope` = 'tccn' | 'ct' → quyết định id của các nút. */
+function renderMonthNav(scope, viewThang, viewNam, rel){
+  const sub = rel>0 ? '<span class="month-pick-sub future">TƯƠNG LAI</span>'
+    : rel<0 ? '<span class="month-pick-sub past">ĐÃ QUA</span>'
+    : '<span class="month-pick-sub now">THÁNG HIỆN TẠI</span>';
+  const mm = String(viewThang).padStart(2,'0');
+  return `
+  <div class="month-nav">
+    <button type="button" class="month-nav-btn" id="${scope}PrevMonth" aria-label="Tháng trước">‹</button>
+    <div class="month-pick">
+      <span class="month-pick-main">Tháng ${viewThang}/${viewNam}</span>
+      ${sub}
+      <input type="month" id="${scope}MonthPick" value="${viewNam}-${mm}" aria-label="Chọn tháng">
+    </div>
+    <button type="button" class="month-nav-btn" id="${scope}NextMonth" aria-label="Tháng sau">›</button>
+    ${rel!==0 ? `<button type="button" class="month-nav-today" id="${scope}TodayMonth" aria-label="Về tháng hiện tại" title="Về tháng hiện tại">↺</button>` : ''}
+  </div>`;
+}
+
 function viewCT(){
   const curThang = state.meta.thang, curNam = state.meta.nam;
   const viewThang = state.ui.ctViewThang ?? curThang;
   const viewNam = state.ui.ctViewNam ?? curNam;
   const rel = cmpMonth(viewThang, viewNam, curThang, curNam); // <0 quá khứ, 0 hiện tại, >0 tương lai
+  const mode = state.ui.ctMode;                               // 'ngay' | 'chart' | 'all'
+  const theoThang = mode !== 'all';
+  state.ui.ctChiThangNay = theoThang;                         // giữ tương thích dữ liệu cũ
+
   const loaiOptions = state.bb.map(b=>b.loai);
-  let rows = state.ct.slice().sort((a,b)=> (b.ngay||'').localeCompare(a.ngay||''));
-  if(state.ui.ctChiThangNay) rows = rows.filter(r=>inMonth(r.ngay, viewThang, viewNam));
+  const allRows = state.ct.slice().sort((a,b)=> (b.ngay||'').localeCompare(a.ngay||''));
+  const monthRows = allRows.filter(r=> inMonth(r.ngay, viewThang, viewNam));
+  const rows = theoThang ? monthRows : allRows;
 
-  // Thống kê nhanh của tháng đang xem: tổng tiền + tổng theo từng loại, để xem lại
-  // "tháng trước đã tiêu cái gì" một cách dễ dàng thay vì phải dò từng dòng.
-  let statsBlock = '';
-  if(state.ui.ctChiThangNay){
-    const tongThang = rows.reduce((s,r)=> s + (Number(r.soTien)||0), 0);
-    const byLoai = {};
-    rows.forEach(r=>{ byLoai[r.loai] = (byLoai[r.loai]||0) + (Number(r.soTien)||0); });
-    const loaiRows = Object.entries(byLoai).sort((a,b)=> b[1]-a[1]);
-    statsBlock = `
-    <div class="panel">
-      <h3>Thống kê tháng ${viewThang}/${viewNam}</h3>
-      <p class="hint">Tổng cộng <b class="mono">${fmt(tongThang)}</b> qua ${rows.length} khoản chi.</p>
-      ${loaiRows.length ? `<div class="summary-row">${loaiRows.map(([loai,tien])=>`<div class="summary-chip">${esc(loai)}<b>${fmt(tien)}</b></div>`).join('')}</div>` : ''}
-    </div>`;
+  /* ---------- Dải tóm tắt nhanh ---------- */
+  const tong = rows.reduce((s,r)=> s + (Number(r.soTien)||0), 0);
+  const days = groupByDay(rows);
+  const maxDay = days.reduce((m,d)=> Math.max(m, d.tong), 0);
+  const nd = daysInMonth(viewThang, viewNam);
+  const now = new Date();
+  const laThangNay = (now.getFullYear()===viewNam && now.getMonth()+1===viewThang);
+  const soNgayDaQua = laThangNay ? now.getDate() : nd;
+  const tbMoiNgay = theoThang ? (tong / Math.max(1, soNgayDaQua)) : (days.length ? tong/days.length : 0);
+  const homNay = days.find(d=> d.ngay === todayStr());
+
+  const quickStats = `
+  <div class="quickstats">
+    <div class="qs">
+      <div class="qs-label">${theoThang?`Tổng T${viewThang}`:'Tổng tất cả'}</div>
+      <div class="qs-value rust">${fmtShort(tong)}</div>
+    </div>
+    <div class="qs">
+      <div class="qs-label">Hôm nay</div>
+      <div class="qs-value ${homNay?'brass':''}">${homNay?fmtShort(homNay.tong):'0'}</div>
+    </div>
+    <div class="qs">
+      <div class="qs-label">TB mỗi ngày</div>
+      <div class="qs-value">${fmtShort(tbMoiNgay)}</div>
+    </div>
+    <div class="qs">
+      <div class="qs-label">Số khoản</div>
+      <div class="qs-value jade">${rows.length}</div>
+    </div>
+  </div>`;
+
+  /* ---------- Bộ chuyển chế độ xem ---------- */
+  const seg = `
+  <div class="seg" role="tablist">
+    <button type="button" data-ctmode="ngay"  class="${mode==='ngay'?'active':''}"  role="tab">Theo ngày</button>
+    <button type="button" data-ctmode="chart" class="${mode==='chart'?'active':''}" role="tab">Biểu đồ</button>
+    <button type="button" data-ctmode="all"   class="${mode==='all'?'active':''}"   role="tab">Tất cả</button>
+  </div>`;
+
+  const monthNav = theoThang ? renderMonthNav('ct', viewThang, viewNam, rel) : '';
+
+  /* ---------- Nội dung theo chế độ ---------- */
+  let content = '';
+
+  if(mode === 'chart'){
+    content = monthRows.length
+      ? chartDaily(monthRows, viewThang, viewNam)
+        + chartCategory(monthRows, viewThang, viewNam)
+        + chartVsBudget(viewThang, viewNam)
+        + chartTrend(viewThang, viewNam)
+      : `<div class="chart-panel"><p class="chart-sub" style="margin:0; text-align:center; padding:14px 0">
+           Tháng ${viewThang}/${viewNam} chưa có khoản chi nào. Bấm nút <b>+</b> để thêm khoản đầu tiên.
+         </p></div>` + chartTrend(viewThang, viewNam);
+
+  } else {
+    /* Xem theo từng ngày — mỗi ngày là một thẻ mở ra xem được đã tiêu những gì */
+    if(!days.length){
+      content = `<div class="chart-panel"><p class="chart-sub" style="margin:0; text-align:center; padding:14px 0">
+        Chưa có khoản chi nào${theoThang?` trong tháng ${viewThang}/${viewNam}`:''}. Bấm nút <b>+</b> ở góc phải màn hình để thêm.
+      </p></div>`;
+    } else {
+      let lastMonthKey = '';
+      content = days.map(d=>{
+        const info = dayHeadInfo(d.ngay);
+        const collapsed = state.ui.ctCollapsedDays.includes(d.ngay);
+        // Ở chế độ "Tất cả", chèn tiêu đề tháng mỗi khi sang tháng mới
+        let sep = '';
+        if(!theoThang){
+          const key = info.thang+'/'+info.nam;
+          if(key !== lastMonthKey){
+            lastMonthKey = key;
+            sep = `<div class="section-sub" style="margin:16px 0 8px; font-weight:700; color:var(--ink)">Tháng ${key}</div>`;
+          }
+        }
+        const items = d.items.map(it=>`
+          <button type="button" class="txn" data-edit-ct="${it.id}">
+            <span class="txn-dot" style="background:${catColor(it.loai)}"></span>
+            <span class="txn-body">
+              <span class="txn-name">${esc(it.chiTiet) || '(không ghi chi tiết)'}</span>
+              <span class="txn-meta">${esc(it.loai)}</span>
+            </span>
+            <span class="txn-amt">${fmt(it.soTien)}</span>
+            <span class="txn-edit">›</span>
+          </button>`).join('');
+
+        return sep + `
+        <div class="day-card ${collapsed?'':'open'} ${info.isToday?'is-today':''}">
+          <button type="button" class="day-head" data-day-toggle="${d.ngay}" aria-expanded="${collapsed?'false':'true'}">
+            <span class="day-datebox">
+              <span class="day-dd">${info.dd}</span>
+              <span class="day-dow">${info.dow}</span>
+            </span>
+            <span class="day-mid">
+              <span class="day-count">${d.items.length} khoản${info.full?` · ${info.full}`:''}</span>
+              <span class="day-meter"><i style="width:${maxDay? (d.tong/maxDay*100).toFixed(1):0}%"></i></span>
+            </span>
+            <span class="day-right">
+              <span class="day-total">${fmt(d.tong)}</span>
+              <span class="day-chev">▼</span>
+            </span>
+          </button>
+          <div class="day-items">${items}</div>
+        </div>`;
+      }).join('');
+
+      content += `
+      <div style="display:flex; gap:9px; margin-top:12px">
+        <button type="button" class="btn" id="ctExpandAll" style="flex:1">Mở tất cả</button>
+        <button type="button" class="btn" id="ctCollapseAll" style="flex:1">Thu gọn tất cả</button>
+      </div>`;
+    }
   }
-
-  const badge = rel>0 ? '<span class="month-nav-badge future">Tương lai</span>'
-    : rel<0 ? '<span class="month-nav-badge past">Đã qua</span>'
-    : '<span class="month-nav-badge now">Tháng hiện tại</span>';
-  const monthNav = state.ui.ctChiThangNay ? `
-  <div class="month-nav">
-    <button type="button" class="month-nav-btn" id="ctPrevMonth" title="Tháng trước" aria-label="Tháng trước">‹</button>
-    <div class="month-nav-label mono">Tháng ${viewThang}/${viewNam}</div>
-    <button type="button" class="month-nav-btn" id="ctNextMonth" title="Tháng sau" aria-label="Tháng sau">›</button>
-    ${badge}
-    ${rel!==0 ? '<button type="button" class="month-nav-today" id="ctTodayMonth">↺ Về tháng hiện tại</button>' : ''}
-  </div>` : '';
-
-  const body = rows.length ? rows.map(r=>{
-    const opts = loaiOptions.includes(r.loai) ? loaiOptions : [r.loai, ...loaiOptions];
-    return `
-    <tr>
-      <td data-label="Ngày"><input type="date" class="txt" data-array="ct" data-id="${r.id}" data-field="ngay" data-type="text" value="${r.ngay||''}"></td>
-      <td data-label="Chi tiết"><input type="text" class="txt" data-array="ct" data-id="${r.id}" data-field="chiTiet" data-type="text" value="${esc(r.chiTiet)}"></td>
-      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="ct" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
-      <td data-label="Loại">
-        <select data-array="ct" data-id="${r.id}" data-field="loai" data-type="text">
-          ${opts.map(o=>`<option value="${esc(o)}" ${o===r.loai?'selected':''}>${esc(o)}</option>`).join('')}
-        </select>
-      </td>
-      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="ct" data-id="${r.id}" title="Xoá">✕</button></td>
-    </tr>`;
-  }).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản chi nào${state.ui.ctChiThangNay?` trong tháng ${viewThang}/${viewNam}`:''}. Thêm khoản đầu tiên bằng nút + ở góc màn hình, hoặc bên dưới.</td></tr>`;
 
   const addForm = `
     <form class="add-form" data-add="ct">
@@ -1048,22 +1632,14 @@ function viewCT(){
 
   return `
   <div class="section-title">Chi tiêu chi tiết</div>
-  <p class="section-sub">Ghi lại từng khoản chi hằng ngày — dùng nút ‹ › để xem lại các khoản đã chi của bất kỳ tháng nào trong quá khứ. Mẹo: bấm nút <b>+</b> ở góc màn hình để thêm nhanh từ bất kỳ đâu.</p>
+  <p class="section-sub">Chạm vào một khoản bất kỳ để sửa hoặc xoá. Chạm vào tên tháng để nhảy thẳng tới tháng cần xem.</p>
 
-  ${wrapAddForm('ct', 'Thêm khoản chi', addForm)}
-
-  <div class="toolbar">
-    <label><input type="checkbox" id="ctFilterToggle" ${state.ui.ctChiThangNay?'checked':''}> Xem theo từng tháng (bỏ tick để xem tất cả)</label>
-  </div>
+  ${seg}
   ${monthNav}
-  ${statsBlock}
+  ${quickStats}
+  ${content}
 
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Ngày</th><th>Chi tiết</th><th class="num">Số tiền</th><th>Loại</th><th class="center">Xoá</th></tr></thead>
-      <tbody>${body}</tbody>
-    </table>
-  </div>
+  ${wrapAddForm('ct', 'Thêm khoản chi (nhập nhiều dòng)', addForm)}
   `;
 }
 
@@ -1418,18 +1994,40 @@ function fillQuickAddLoaiOptions(){
   const loaiOptions = state.bb.map(b=>b.loai);
   sel.innerHTML = loaiOptions.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
 }
-function openQuickAdd(){
+/* editId = null → thêm mới; editId = id → mở đúng khoản đó ra để sửa/xoá.
+   Dùng chung một tấm sheet cho cả hai việc: trên điện thoại, gõ vào ô nhỏ xíu trong
+   bảng rất khó, còn tấm sheet này có ô cao 46px, bàn phím số bật sẵn. */
+let editingCtId = null;
+function openQuickAdd(editId){
   fillQuickAddLoaiOptions();
-  document.getElementById('qaSoTien').value = '';
-  document.getElementById('qaChiTiet').value = '';
-  document.getElementById('qaNgay').value = todayStr();
+  const row = editId ? state.ct.find(r=>r.id===editId) : null;
+  editingCtId = row ? editId : null;
+
+  document.getElementById('qaSoTien').value  = row ? formatNumberPlain(row.soTien) : '';
+  document.getElementById('qaChiTiet').value = row ? (row.chiTiet||'') : '';
+  document.getElementById('qaNgay').value    = row ? (row.ngay||todayStr()) : todayStr();
+  if(row){
+    const sel = document.getElementById('qaLoai');
+    // Hạng mục cũ có thể đã bị đổi tên/xoá ở tab Ngân sách — vẫn phải hiện đúng giá trị
+    if(![...sel.options].some(o=>o.value===row.loai)){
+      sel.insertAdjacentHTML('afterbegin', `<option value="${esc(row.loai)}">${esc(row.loai)} (đã bỏ)</option>`);
+    }
+    sel.value = row.loai;
+  }
+
+  document.getElementById('quickAddTitle').textContent   = row ? 'Sửa khoản chi' : 'Thêm chi tiêu nhanh';
+  document.getElementById('quickAddSubmit').textContent  = row ? '✓ Lưu thay đổi' : '+ Lưu khoản chi';
+  document.getElementById('quickAddDeleteWrap').style.display = row ? 'flex' : 'none';
+
   document.getElementById('quickAddOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
-  setTimeout(()=>{ document.getElementById('qaSoTien').focus(); }, 50);
+  // Khi sửa thì không tự bật bàn phím — người dùng thường chỉ muốn xem lại rồi xoá.
+  if(!row) setTimeout(()=>{ document.getElementById('qaSoTien').focus(); }, 50);
 }
 function closeQuickAdd(){
   document.getElementById('quickAddOverlay').classList.remove('open');
   document.body.style.overflow = '';
+  editingCtId = null;
 }
 
 /* ==========================================================
@@ -1446,26 +2044,91 @@ fabTop.addEventListener('click', ()=>{
 });
 updateFabTop();
 
-document.getElementById('fabAdd').addEventListener('click', openQuickAdd);
+document.getElementById('fabAdd').addEventListener('click', ()=>openQuickAdd());
 document.getElementById('quickAddClose').addEventListener('click', closeQuickAdd);
 document.getElementById('quickAddOverlay').addEventListener('click', e=>{
   if(e.target.id==='quickAddOverlay') closeQuickAdd();
 });
 document.getElementById('quickAddForm').addEventListener('submit', e=>{
   e.preventDefault();
-  const obj = {
-    id: uid(),
+  const data = {
     ngay: document.getElementById('qaNgay').value || todayStr(),
     chiTiet: document.getElementById('qaChiTiet').value.trim(),
     soTien: parseMoney(document.getElementById('qaSoTien').value),
     loai: document.getElementById('qaLoai').value,
   };
-  if(!obj.chiTiet || !obj.soTien){ return; }
-  state.ct.push(obj);
+  if(!data.chiTiet || !data.soTien) return;
+
+  if(editingCtId){
+    const row = state.ct.find(r=>r.id===editingCtId);
+    if(row) Object.assign(row, data);
+  } else {
+    state.ct.push({ id: uid(), ...data });
+    // Khoản mới nằm ngoài tháng đang xem thì nhảy sang tháng đó luôn, nếu không
+    // người dùng sẽ tưởng là ghi hụt vì không thấy nó đâu cả.
+    const d = parseDate(data.ngay);
+    if(d && state.ui.currentTab==='ct' && state.ui.ctMode!=='all'){
+      const vT = state.ui.ctViewThang ?? state.meta.thang;
+      const vN = state.ui.ctViewNam   ?? state.meta.nam;
+      if(d.getMonth()+1 !== vT || d.getFullYear() !== vN){
+        state.ui.ctViewThang = d.getMonth()+1;
+        state.ui.ctViewNam   = d.getFullYear();
+      }
+    }
+    // Ngày vừa ghi luôn được mở sẵn để thấy ngay khoản mình vừa nhập
+    const i = state.ui.ctCollapsedDays.indexOf(data.ngay);
+    if(i >= 0) state.ui.ctCollapsedDays.splice(i,1);
+  }
   saveState();
   closeQuickAdd();
   renderAll();
 });
+
+document.getElementById('quickAddDelete').addEventListener('click', ()=>{
+  if(!editingCtId) return;
+  if(!confirm('Xoá khoản chi này?')) return;
+  state.ct = state.ct.filter(r=>r.id!==editingCtId);
+  saveState();
+  closeQuickAdd();
+  renderAll({keepScroll:true});
+});
+
+/* ==========================================================
+   ĐIỀU HƯỚNG THÁNG (dùng chung cho Tổng quan + Chi tiêu)
+   ----------------------------------------------------------
+   Trước đây đoạn này bị chép tay 6 lần, mỗi tab một bản → chỉ cần sửa một chỗ là lệch.
+   Nay gom về một hàm duy nhất, kèm CHỐT CHẶN CHỐNG NHẬN 2 LẦN CHẠM.
+   ========================================================== */
+let lastMonthNavAt = 0;
+function navMonth(scope, delta, backToToday){
+  // Cùng một cú chạm mà trình duyệt bắn 2 sự kiện click liên tiếp (hoặc ngón tay nảy
+  // nhẹ trên màn hình kính) sẽ làm tháng lùi/tiến 2 bước. 250ms đủ để loại bỏ cú chạm
+  // thừa nhưng vẫn cho phép bấm liên tục khi người dùng thật sự muốn đi nhiều tháng.
+  const now = Date.now();
+  if(now - lastMonthNavAt < 250) return;
+  lastMonthNavAt = now;
+
+  const kThang = scope+'ViewThang', kNam = scope+'ViewNam';
+  if(backToToday){
+    state.ui[kThang] = null; state.ui[kNam] = null;
+  } else {
+    const viewThang = state.ui[kThang] ?? state.meta.thang;
+    const viewNam   = state.ui[kNam]   ?? state.meta.nam;
+    const m = addMonths(viewThang, viewNam, delta);
+    state.ui[kThang] = m.thang; state.ui[kNam] = m.nam;
+  }
+  saveState();
+  renderAll({keepScroll:true});   // giữ nguyên chỗ đang đọc, không nhảy về đầu trang
+}
+/* Chọn thẳng một tháng bất kỳ từ bộ chọn tháng gốc của iOS */
+function pickMonth(scope, value){
+  const m = /^(\d{4})-(\d{2})$/.exec(value || '');
+  if(!m) return;
+  state.ui[scope+'ViewThang'] = parseInt(m[2],10);
+  state.ui[scope+'ViewNam']   = parseInt(m[1],10);
+  saveState();
+  renderAll({keepScroll:true});
+}
 
 /* ==========================================================
    EVENT DELEGATION
@@ -1512,48 +2175,54 @@ document.addEventListener('click', e=>{
     return;
   }
 
-  // Điều hướng tháng ở Tổng quan
-  if(e.target.id==='tccnPrevMonth' || e.target.closest && e.target.closest('#tccnPrevMonth')){
-    const curThang = state.meta.thang, curNam = state.meta.nam;
-    const viewThang = state.ui.tccnViewThang ?? curThang;
-    const viewNam = state.ui.tccnViewNam ?? curNam;
-    const prev = addMonths(viewThang, viewNam, -1);
-    state.ui.tccnViewThang = prev.thang; state.ui.tccnViewNam = prev.nam;
-    saveState(); renderAll(); return;
-  }
-  if(e.target.id==='tccnNextMonth' || e.target.closest && e.target.closest('#tccnNextMonth')){
-    const curThang = state.meta.thang, curNam = state.meta.nam;
-    const viewThang = state.ui.tccnViewThang ?? curThang;
-    const viewNam = state.ui.tccnViewNam ?? curNam;
-    const next = addMonths(viewThang, viewNam, 1);
-    state.ui.tccnViewThang = next.thang; state.ui.tccnViewNam = next.nam;
-    saveState(); renderAll(); return;
-  }
-  if(e.target.id==='tccnTodayMonth' || e.target.closest && e.target.closest('#tccnTodayMonth')){
-    state.ui.tccnViewThang = null; state.ui.tccnViewNam = null;
-    saveState(); renderAll(); return;
+  // ---------- Chuyển chế độ xem ở tab Chi tiêu ----------
+  const segBtn = e.target.closest('[data-ctmode]');
+  if(segBtn){
+    state.ui.ctMode = segBtn.dataset.ctmode;
+    saveState(); renderAll(); window.scrollTo({top:0}); return;
   }
 
-  // Điều hướng tháng ở Chi tiêu (xem lại lịch sử chi tiêu tháng trước)
-  if(e.target.id==='ctPrevMonth' || e.target.closest && e.target.closest('#ctPrevMonth')){
-    const curThang = state.meta.thang, curNam = state.meta.nam;
-    const viewThang = state.ui.ctViewThang ?? curThang;
-    const viewNam = state.ui.ctViewNam ?? curNam;
-    const prev = addMonths(viewThang, viewNam, -1);
-    state.ui.ctViewThang = prev.thang; state.ui.ctViewNam = prev.nam;
-    saveState(); renderAll(); return;
+  // ---------- Mở/đóng một ngày ----------
+  const dayBtn = e.target.closest('[data-day-toggle]');
+  if(dayBtn){
+    const ngay = dayBtn.dataset.dayToggle;
+    const card = dayBtn.closest('.day-card');
+    const list = state.ui.ctCollapsedDays;
+    const i = list.indexOf(ngay);
+    if(i >= 0) list.splice(i,1); else list.push(ngay);
+    saveState();
+    // Chỉ bật/tắt class ngay tại chỗ — không vẽ lại cả trang nên không giật, không mất
+    // vị trí cuộn, và phản hồi tức thì dù danh sách dài.
+    if(card){
+      const open = i >= 0;
+      card.classList.toggle('open', open);
+      dayBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    return;
   }
-  if(e.target.id==='ctNextMonth' || e.target.closest && e.target.closest('#ctNextMonth')){
-    const curThang = state.meta.thang, curNam = state.meta.nam;
-    const viewThang = state.ui.ctViewThang ?? curThang;
-    const viewNam = state.ui.ctViewNam ?? curNam;
-    const next = addMonths(viewThang, viewNam, 1);
-    state.ui.ctViewThang = next.thang; state.ui.ctViewNam = next.nam;
-    saveState(); renderAll(); return;
+  if(e.target.id==='ctExpandAll'){ state.ui.ctCollapsedDays = []; saveState(); renderAll({keepScroll:true}); return; }
+  if(e.target.id==='ctCollapseAll'){
+    state.ui.ctCollapsedDays = [...new Set(state.ct.map(r=>r.ngay).filter(Boolean))];
+    saveState(); renderAll({keepScroll:true}); return;
   }
-  if(e.target.id==='ctTodayMonth' || e.target.closest && e.target.closest('#ctTodayMonth')){
-    state.ui.ctViewThang = null; state.ui.ctViewNam = null;
-    saveState(); renderAll(); return;
+
+  // ---------- Chạm vào một khoản chi để sửa / xoá ----------
+  const editBtn = e.target.closest('[data-edit-ct]');
+  if(editBtn){ openQuickAdd(editBtn.dataset.editCt); return; }
+
+  // ---------- Chạm vào cột trong biểu đồ xu hướng để nhảy tới tháng đó ----------
+  const jumpEl = e.target.closest('[data-jump]');
+  if(jumpEl){
+    const [t,n] = jumpEl.getAttribute('data-jump').split('-').map(Number);
+    state.ui.ctViewThang = t; state.ui.ctViewNam = n;
+    saveState(); renderAll({keepScroll:true}); return;
+  }
+
+  // ---------- Điều hướng tháng (dùng chung Tổng quan + Chi tiêu) ----------
+  for(const scope of ['tccn','ct']){
+    if(e.target.closest('#'+scope+'PrevMonth'))  return navMonth(scope, -1);
+    if(e.target.closest('#'+scope+'NextMonth'))  return navMonth(scope, +1);
+    if(e.target.closest('#'+scope+'TodayMonth')) return navMonth(scope, 0, true);
   }
 
   if(e.target.id==='btnExport'){
@@ -1671,11 +2340,9 @@ document.addEventListener('focusin', e=>{
 document.addEventListener('change', e=>{
   const el = e.target;
 
-  // Toggle lọc CT theo tháng
-  if(el.id==='ctFilterToggle'){
-    state.ui.ctChiThangNay = el.checked;
-    saveState(); renderAll(); return;
-  }
+  // Chọn tháng trực tiếp bằng bộ chọn tháng gốc của iOS
+  if(el.id==='ctMonthPick'){ pickMonth('ct', el.value); return; }
+  if(el.id==='tccnMonthPick'){ pickMonth('tccn', el.value); return; }
 
   // Xem dư nợ tháng khác
   if(el.id==='duNoThangInput' || el.id==='duNoNamInput'){
@@ -1699,10 +2366,7 @@ document.addEventListener('change', e=>{
           return;
         }
         if(confirm('Khôi phục sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại. Tiếp tục?')){
-          parsed.ui = parsed.ui || { currentTab:'tccn', ctChiThangNay:true, duNoThangKhac:null, duNoNamKhac:null, tccnViewThang:null, tccnViewNam:null, ctViewThang:null, ctViewNam:null };
-          if(parsed.ui.ctViewThang===undefined) parsed.ui.ctViewThang = null;
-          if(parsed.ui.ctViewNam===undefined) parsed.ui.ctViewNam = null;
-          state = parsed;
+          state = migrateUI(parsed);
           saveState(); renderAll();
         }
       }catch(err){
