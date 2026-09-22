@@ -908,17 +908,13 @@ function computeDuNoThang(thang, nam){
 }
 function computeVayOutstanding(){ return state.vay.reduce((s,r)=> s + (!r.daHoanThanh ? (Number(r.soTien)||0) : 0), 0); }
 function computeCTAllTime(){ return state.ct.reduce((s,r)=> s + (Number(r.soTien)||0), 0); }
-/* Dư nợ trả góp (duno) đã tick "Đã hoàn thành" — tức tiền đã thực sự rời khỏi TPBank/tiền
-   mặt để trả nợ, nên phải trừ vào số dư thực tế. Trước khi tick thì KHÔNG trừ, vì đó mới
-   chỉ là nghĩa vụ sắp TỚI HẠN theo tháng chứ chưa phải tiền đã chi ra. */
+/* Các khoản Dư nợ (trả góp) / Vay đã tick "Đã hoàn thành" — tức tiền đã thực sự rời khỏi
+   TPBank/tiền mặt để trả nợ, nên phải trừ vào số dư thực tế. Trước khi tick thì KHÔNG trừ,
+   vì đó mới chỉ là nghĩa vụ sắp tới chứ chưa phải tiền đã thực sự chi ra — "Số dư thực tế"
+   phản ánh đúng tiền đang cầm trong tay, không phải tài sản ròng sau khi trừ nợ. Nghĩa vụ
+   "chưa trả" (cả Dư nợ lẫn Vay) chỉ được tính vào ô "Bù trừ" bên dưới, xem computeTCCNForMonth. */
 function computeDuNoPaid(){ return state.duno.reduce((s,r)=> s + (r.daHoanThanh ? (Number(r.soTien)||0) : 0), 0); }
 function computeVayPaid(){ return state.vay.reduce((s,r)=> s + (r.daHoanThanh ? (Number(r.soTien)||0) : 0), 0); }
-/* Khác với Dư nợ trả góp (chỉ tới hạn vào một tháng cụ thể), khoản "Vay" được coi là
-   NGHĨA VỤ CẦN TRẢ NGAY — nên bị trừ thẳng vào số dư thực tế NGAY khi ghi nhận, không
-   chờ tick "Đã hoàn thành" mới trừ. Tick "Đã hoàn thành" chỉ để đánh dấu đã tất toán
-   xong (không còn tính là "chưa trả" ở các thẻ hiển thị) chứ không cộng/trừ thêm lần
-   nữa — số tiền đã bị trừ ngay từ lúc thêm khoản vay rồi. */
-function computeVayTotal(){ return state.vay.reduce((s,r)=> s + (Number(r.soTien)||0), 0); }
 
 /* Số dư thực tế "hôm nay" — không phụ thuộc tháng đang xem ở Tổng quan */
 function computeSoDuHomNay(){
@@ -930,10 +926,9 @@ function computeSoDuHomNay(){
   const duNoPaid = computeDuNoPaid();
   const vayOutstanding = computeVayOutstanding();
   const vayPaid = computeVayPaid();
-  const vayTotal = computeVayTotal();
-  const soDuHienTai = (Number(tpbank)||0) + (Number(tienMat)||0) - chovayOutstanding - ctAllTime + chotraReceived - duNoPaid - vayTotal;
+  const soDuHienTai = (Number(tpbank)||0) + (Number(tienMat)||0) - chovayOutstanding - ctAllTime + chotraReceived - duNoPaid - vayPaid;
   const soDuDayDu = soDuHienTai + chotraOutstanding;
-  return { chovayOutstanding, chotraOutstanding, chotraReceived, duNoPaid, vayOutstanding, vayPaid, vayTotal, soDuHienTai, soDuDayDu };
+  return { chovayOutstanding, chotraOutstanding, chotraReceived, duNoPaid, vayOutstanding, vayPaid, soDuHienTai, soDuDayDu };
 }
 
 /* Tính toán Tổng quan cho MỘT tháng bất kỳ đang được xem (viewThang/viewNam),
@@ -942,10 +937,10 @@ function computeSoDuHomNay(){
 function computeTCCNForMonth(viewThang, viewNam){
   const curThang = state.meta.thang, curNam = state.meta.nam;
   const base = computeSoDuHomNay();
-  // Khoản vay chưa trả đã bị trừ thẳng vào base.soDuHienTai/soDuDayDu rồi (xem
-  // computeSoDuHomNay) — duNoVAY ở đây CHỈ để hiển thị số "chưa trả" trên các thẻ,
-  // KHÔNG được trừ thêm lần nữa vào buTruDuKien kẻo trừ trùng hai lần.
-  const duNoVAY = base.vayOutstanding;
+  // Khoản vay CHƯA trả không nằm trong base.soDuDayDu (tiền đó vẫn còn nguyên trong túi,
+  // xem computeSoDuHomNay) — nên phải trừ riêng ở đây, vì "Bù trừ" là dự phóng có đủ
+  // tiền trang trải nghĩa vụ sắp tới hay không, khác với "Số dư thực tế" là tiền đang có.
+  const duNoVAY = computeVayOutstanding();
 
   // Số liệu riêng của tháng đang xem
   const bbRowsXem = computeBBRowsFor(viewThang, viewNam);
@@ -967,9 +962,8 @@ function computeTCCNForMonth(viewThang, viewNam){
     });
   }
   const tongCanLuyKe = cumNganSach + cumDuNo;
-  // Dự kiến số dư còn lại nếu phải tự trang trải toàn bộ ngân sách + nợ đến hạn từ giờ đến hết tháng đang xem.
-  // KHÔNG trừ duNoVAY ở đây nữa vì nó đã nằm trong base.soDuDayDu (xem computeSoDuHomNay).
-  const buTruDuKien = base.soDuDayDu - tongCanLuyKe;
+  // Dự kiến số dư còn lại nếu phải tự trang trải toàn bộ ngân sách + nợ đến hạn từ giờ đến hết tháng đang xem
+  const buTruDuKien = base.soDuDayDu - duNoVAY - tongCanLuyKe;
 
   return {
     isFutureOrCurrent, months,
@@ -2000,7 +1994,7 @@ function viewVay(){
 
   return `
   <div class="section-title">Khoản vay</div>
-  <p class="section-sub">Các khoản bạn vay người khác/tổ chức — không tự reset theo tháng. Khác với Dư nợ trả góp, khoản Vay được coi là <b>cần trả ngay</b> nên bị trừ thẳng vào "Số dư thực tế" ở tab Tổng quan ngay khi ghi nhận, không chờ tick "Đã hoàn thành". Tick "Đã hoàn thành" chỉ để đánh dấu đã tất toán xong, không trừ thêm lần nữa.</p>
+  <p class="section-sub">Các khoản bạn vay người khác/tổ chức — không tự reset theo tháng, chỉ mất khi tick "Đã hoàn thành". Khoản vay <b>chưa trả</b> không trừ vào "Số dư thực tế" (tiền vẫn còn nguyên trong túi bạn), nhưng được tính ngay vào "Bù trừ" ở tab Tổng quan như một khoản <b>cần trả ngay</b> — không đợi tới tháng nào như Dư nợ trả góp.</p>
 
   ${chartMonthlyStacked(state.vay, {
     title:'Khoản vay theo tháng',
