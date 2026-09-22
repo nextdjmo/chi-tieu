@@ -938,16 +938,18 @@ function computeTCCNForMonth(viewThang, viewNam){
   const curThang = state.meta.thang, curNam = state.meta.nam;
   const base = computeSoDuHomNay();
   // Khoản vay CHƯA trả không nằm trong base.soDuDayDu (tiền đó vẫn còn nguyên trong túi,
-  // xem computeSoDuHomNay) — nên phải trừ riêng ở đây, vì "Bù trừ" là dự phóng có đủ
-  // tiền trang trải nghĩa vụ sắp tới hay không, khác với "Số dư thực tế" là tiền đang có.
+  // xem computeSoDuHomNay) — nên phải cộng vào "Tổng cần" ở đây, vì "Bù trừ" là dự phóng
+  // có đủ tiền trang trải mọi nghĩa vụ (ngân sách + dư nợ đến hạn + khoản vay cần trả
+  // ngay) hay không, khác với "Số dư thực tế" là tiền đang thật sự có trong tay.
   const duNoVAY = computeVayOutstanding();
 
   // Số liệu riêng của tháng đang xem
   const bbRowsXem = computeBBRowsFor(viewThang, viewNam);
   const bbSumXem = computeBBSummary(bbRowsXem);
   const duNoThangXem = computeDuNoThang(viewThang, viewNam);
-  // Dùng soTienCanThucTe (không cho hạng mục vượt ngân sách bù trừ ngược cho hạng mục khác)
-  const tongCanThangXem = bbSumXem.soTienCanThucTe + duNoThangXem;
+  // Dùng soTienCanThucTe (không cho hạng mục vượt ngân sách bù trừ ngược cho hạng mục khác).
+  // Cộng cả duNoVAY vào đây vì khoản vay không đợi tới tháng nào — luôn "cần trả ngay".
+  const tongCanThangXem = bbSumXem.soTienCanThucTe + duNoThangXem + duNoVAY;
 
   // Luỹ kế từ tháng hiện tại đến tháng đang xem (chỉ có ý nghĩa nếu xem >= tháng hiện tại)
   const isFutureOrCurrent = cmpMonth(viewThang, viewNam, curThang, curNam) >= 0;
@@ -961,9 +963,13 @@ function computeTCCNForMonth(viewThang, viewNam){
       cumDuNo += computeDuNoThang(m.thang, m.nam);
     });
   }
-  const tongCanLuyKe = cumNganSach + cumDuNo;
-  // Dự kiến số dư còn lại nếu phải tự trang trải toàn bộ ngân sách + nợ đến hạn từ giờ đến hết tháng đang xem
-  const buTruDuKien = base.soDuDayDu - duNoVAY - tongCanLuyKe;
+  // duNoVAY chỉ cộng MỘT LẦN (không nhân theo số tháng) vì đây là tổng khoản vay chưa trả
+  // tính đến hiện tại, không phải nghĩa vụ lặp lại mỗi tháng như ngân sách/dư nợ trả góp.
+  const tongCanLuyKe = cumNganSach + cumDuNo + duNoVAY;
+  // Dự kiến số dư còn lại nếu phải tự trang trải toàn bộ ngân sách + nợ đến hạn + khoản vay
+  // từ giờ đến hết tháng đang xem. duNoVAY đã nằm sẵn trong tongCanLuyKe ở trên rồi, không
+  // trừ thêm lần nữa ở đây kẻo bị trừ trùng.
+  const buTruDuKien = base.soDuDayDu - tongCanLuyKe;
 
   return {
     isFutureOrCurrent, months,
@@ -1068,13 +1074,13 @@ function viewTCCN(){
 
   const statusBanner = !firstSetup ? (
     rel === 0 ? (thieuHutDuKien ? `
-    <div class="banner warn">⚠️ <div><b>Bù trừ đang âm ${fmt(Math.abs(t.buTruDuKien))}.</b> Sau khi trừ nợ đến hạn tháng ${viewThang}/${viewNam} và ngân sách còn lại, bạn đang thiếu hụt so với nhu cầu chi tiêu tháng này.</div></div>
+    <div class="banner warn">⚠️ <div><b>Bù trừ đang âm ${fmt(Math.abs(t.buTruDuKien))}.</b> Sau khi trừ nợ đến hạn tháng ${viewThang}/${viewNam}, khoản vay chưa trả và ngân sách còn lại, bạn đang thiếu hụt so với nhu cầu chi tiêu tháng này.</div></div>
     ` : `
-    <div class="banner ok">✓ Bù trừ đang dương ${fmt(t.buTruDuKien)} — đủ trang trải nợ đến hạn và chi tiêu còn lại trong tháng.</div>
+    <div class="banner ok">✓ Bù trừ đang dương ${fmt(t.buTruDuKien)} — đủ trang trải nợ đến hạn, khoản vay chưa trả và chi tiêu còn lại trong tháng.</div>
     `) : rel > 0 ? (thieuHutDuKien ? `
-    <div class="banner warn">⚠️ <div><b>Tính từ giờ đến hết tháng ${viewThang}/${viewNam}, bạn cần chuẩn bị thêm ${fmt(Math.abs(t.buTruDuKien))}</b> mới đủ trả nợ đến hạn và chi tiêu của cả ${t.months.length} tháng (kể cả tháng hiện tại). Hãy tiết kiệm thêm hoặc giảm chi để bù khoản này.</div></div>
+    <div class="banner warn">⚠️ <div><b>Tính từ giờ đến hết tháng ${viewThang}/${viewNam}, bạn cần chuẩn bị thêm ${fmt(Math.abs(t.buTruDuKien))}</b> mới đủ trả nợ đến hạn, khoản vay chưa trả và chi tiêu của cả ${t.months.length} tháng (kể cả tháng hiện tại). Hãy tiết kiệm thêm hoặc giảm chi để bù khoản này.</div></div>
     ` : `
-    <div class="banner ok">✓ Nếu không phát sinh gì thêm, bạn còn dư dự kiến ${fmt(t.buTruDuKien)} tính đến hết tháng ${viewThang}/${viewNam} — đủ khả năng trả nợ và chi tiêu cho ${t.months.length} tháng tới.</div>
+    <div class="banner ok">✓ Nếu không phát sinh gì thêm, bạn còn dư dự kiến ${fmt(t.buTruDuKien)} tính đến hết tháng ${viewThang}/${viewNam} — đủ khả năng trả nợ, khoản vay chưa trả và chi tiêu cho ${t.months.length} tháng tới.</div>
     `) : `
     <div class="banner info">Bạn đang xem lại tháng ${viewThang}/${viewNam} (đã qua) — số liệu bên dưới là ngân sách/dư nợ thực tế của tháng đó, không tính dự phóng.</div>
     `
@@ -1102,13 +1108,17 @@ function viewTCCN(){
       <div class="card-label">Dư nợ đến hạn tháng ${viewThang}/${viewNam}</div>
       <div class="card-value">${fmt(t.duNoThangXem)}</div>
     </div>
+    <div class="card rust">
+      <div class="card-label">Khoản vay chưa trả (cần trả ngay)</div>
+      <div class="card-value">${fmt(t.duNoVAY)}</div>
+    </div>
     <div class="card brass">
       <div class="card-label">${ngsLabel} (tháng ${viewThang}/${viewNam})</div>
       <div class="card-value">${fmt(t.bbSumXem.soTienCanThucTe)}</div>
       ${rel===0 ? `<div class="card-sub">Còn ${daysRemainingInCycle()} ngày (đến ${cycleEndDate().getDate()}/${cycleEndDate().getMonth()+1})</div>` : ''}
     </div>
     <div class="card jade">
-      <div class="card-label">Tổng cần cho tháng ${viewThang}/${viewNam}</div>
+      <div class="card-label">Tổng cần cho tháng ${viewThang}/${viewNam} (đã gồm khoản vay)</div>
       <div class="card-value jade">${fmt(t.tongCanThangXem)}</div>
     </div>
     <div class="card ${thieuHutDuKien?'rust':'jade'}">
@@ -1129,12 +1139,16 @@ function viewTCCN(){
       <div class="card-label">Dư nợ đến hạn tháng ${viewThang}/${viewNam}</div>
       <div class="card-value">${fmt(t.duNoThangXem)}</div>
     </div>
+    <div class="card rust">
+      <div class="card-label">Khoản vay chưa trả (cần trả ngay)</div>
+      <div class="card-value">${fmt(t.duNoVAY)}</div>
+    </div>
     <div class="card brass">
       <div class="card-label">${ngsLabel} (tháng ${viewThang}/${viewNam})</div>
       <div class="card-value">${fmt(t.bbSumXem.soTienCanThucTe)}</div>
     </div>
     <div class="card rust">
-      <div class="card-label">Tổng cần cộng dồn (${t.months.length} tháng, kể cả nay)</div>
+      <div class="card-label">Tổng cần cộng dồn (${t.months.length} tháng, kể cả nay, đã gồm khoản vay)</div>
       <div class="card-value">${fmt(t.tongCanLuyKe)}</div>
     </div>
     <div class="card ${thieuHutDuKien?'rust':'jade'}">
@@ -1202,7 +1216,7 @@ function viewTCCN(){
       <div class="summary-chip">Tổng ngân sách cộng dồn<b>${fmt(t.cumNganSach)}</b></div>
       <div class="summary-chip">Tổng dư nợ trả góp cộng dồn<b>${fmt(t.cumDuNo)}</b></div>
       <div class="summary-chip">Khoản vay chưa trả (cộng thêm luôn, không theo tháng)<b>${fmt(t.duNoVAY)}</b></div>
-      <div class="summary-chip">Cần chuẩn bị tổng cộng<b>${fmt(t.tongCanLuyKe + t.duNoVAY)}</b></div>
+      <div class="summary-chip">Cần chuẩn bị tổng cộng (đã gồm khoản vay)<b>${fmt(t.tongCanLuyKe)}</b></div>
     </div>
   </div>` : '';
 
