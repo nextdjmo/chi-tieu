@@ -628,7 +628,10 @@
   .auth-card button{width:100%;height:46px;border:0;border-radius:var(--r-sm);background:var(--brass);color:#fff;font-weight:700;cursor:pointer;margin-top:4px;}
   .auth-card .secondary{background:var(--paper-2);color:var(--ink);border:1px solid var(--line);margin-top:9px;}
   .auth-error{min-height:18px;margin-top:10px!important;color:var(--rust)!important;font-size:12px;}
-  .account-bar{position:fixed;right:10px;top:calc(7px + var(--sa-top));z-index:80;font-size:11px;color:#fff;display:none;align-items:center;gap:7px;}
+  .account-bar{
+    position:absolute; right:10px; top:calc(7px + var(--sa-top)); z-index:10;
+    font-size:11px; color:#fff; display:none; align-items:center; gap:7px;
+  }
   .account-bar button{border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.14);color:#fff;border-radius:8px;padding:5px 8px;font-size:11px;}
 
 
@@ -672,6 +675,37 @@
   .month-pick-cycle{
     display:block; margin-top:2px; font-size:10px; line-height:1.25;
     font-weight:600; color:var(--ink-faint); letter-spacing:.01em;
+  }
+
+
+  #initialBalanceSettings > div > #setupPanel{
+    box-shadow:none; border:0; padding:0; margin:0; background:transparent;
+  }
+  #initialBalanceSettings summary::-webkit-details-marker{margin-right:7px;}
+
+
+  /* Mobile compact chrome: content gets the screen, not account/settings metadata. */
+  @media(max-width:700px){
+    header.masthead{
+      padding:calc(10px + var(--sa-top)) calc(12px + var(--sa-right)) 9px calc(12px + var(--sa-left));
+    }
+    .masthead-inner{
+      min-height:28px; flex-wrap:nowrap; align-items:center; gap:8px;
+    }
+    .masthead-title{font-size:18px; line-height:1;}
+    .masthead-meta{
+      margin-left:auto; font-size:10px; line-height:1; white-space:nowrap;
+      opacity:.82; display:block;
+    }
+    .account-bar{
+      position:absolute; top:calc(44px + var(--sa-top)); right:10px;
+      font-size:10px; gap:5px;
+    }
+    .account-bar button{padding:4px 6px;font-size:10px;}
+    /* Sync status does not need to occupy permanent mobile header space when saved. */
+    #syncStatus[data-state="saved"]{display:none;}
+    #syncStatus{min-height:24px;padding:3px 7px;font-size:10px;}
+    nav.tabs{top:0;}
   }
 
 </style>
@@ -1254,8 +1288,11 @@ function computeTCCNForMonth(viewThang, viewNam){
    RENDER: layout shell
    ========================================================== */
 function renderMasthead(){
-  const el = document.getElementById('mastheadMeta');
-  el.innerHTML = `Chu kỳ hiện tại <b>${state.meta.thang}/${state.meta.nam}</b> (${cycleLabel(state.meta.thang,state.meta.nam)}) · Ghi nhận ngày <b>${state.meta.ghiNhanNgay ? state.meta.ghiNhanNgay.split('-').reverse().join('/') : '—'}</b>`;
+  const el=document.getElementById('mastheadMeta');
+  const a=cycleStartFor(state.meta.thang,state.meta.nam);
+  const b=cycleEndFor(state.meta.thang,state.meta.nam);
+  const dm=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  el.innerHTML=`<span title="Chu kỳ ${cycleLabel(state.meta.thang,state.meta.nam)}">${dm(a)} → ${dm(b)}</span>`;
 }
 function renderTabs(){
   const el = document.getElementById('tabsInner');
@@ -1289,8 +1326,8 @@ function renderAll(opts){
 function viewSetupPanel(highlight){
   return `
   <div class="panel" id="setupPanel">
-    <h3>Thiết lập chung</h3>
-    <p class="hint">Nhập <b>số dư ban đầu</b> (tiền đang có trong TPBank và tiền mặt) ở đây <b>một lần duy nhất</b> khi bắt đầu dùng sổ. Sau đó bạn <b>không cần sửa lại hai ô này nữa</b> — số dư sẽ tự động cộng/trừ theo các khoản ở tab Chi tiêu, Cho vay, Chờ thu, Dư nợ và Vay.</p>
+    <h3>Cài đặt số dư ban đầu</h3>
+    <p class="hint"><b>Chỉ sửa khi bạn thật sự muốn đổi mốc ban đầu.</b> TPBank và tiền mặt ở đây là số tiền lúc bắt đầu dùng sổ, không phải số dư ngân hàng hiện tại. Thay đổi hai số này sẽ làm thay đổi số dư được tính trên toàn bộ sổ.</p>
     <div class="meta-grid">
       <div class="field">
         <label>Chu kỳ hiện tại (tháng bắt đầu)</label>
@@ -1303,7 +1340,7 @@ function viewSetupPanel(highlight){
         <input type="number" data-meta="nam" data-type="number" value="${state.meta.nam}">
       </div>
       <div class="field">
-        <label>Ghi nhận ngày</label>
+        <label>Ngày bắt đầu ghi nhận</label>
         <input type="date" data-meta="ghiNhanNgay" data-type="text" value="${state.meta.ghiNhanNgay||''}">
       </div>
       <div class="field">
@@ -1328,7 +1365,7 @@ function viewTCCN(){
   const firstSetup = isFirstSetup();
 
   const setupBanner = firstSetup ? `
-  <div class="banner setup">👋 <div><b>Bắt đầu tại đây:</b> nhập số tiền bạn đang có (TPBank + tiền mặt) vào ô bên dưới. Chỉ cần nhập một lần — từ giờ về sau, sổ sẽ tự tính số dư của bạn dựa trên các khoản chi tiêu, cho vay và chờ thu mà bạn ghi lại.</div></div>
+  <div class="banner setup">👋 <div><b>Cần thiết lập lần đầu:</b> vào tab <b>Dữ liệu</b> → <b>Cài đặt số dư ban đầu</b>. Sau khi thiết lập, số dư ban đầu sẽ không xuất hiện trên Tổng quan nữa.</div></div>
   ` : '';
 
   const monthNav = renderMonthNav('tccn', viewThang, viewNam, rel);
@@ -2347,6 +2384,17 @@ function viewData(){
   return `
   <div class="section-title">Dữ liệu</div>
   <p class="section-sub">Dữ liệu nghiệp vụ đang lưu trên Supabase và có thể dùng lại trên thiết bị khác. JSON bên dưới là bản sao lưu thủ công bổ sung.</p>
+
+  <details class="panel" id="initialBalanceSettings" ${isFirstSetup()?'open':''}>
+    <summary style="cursor:pointer;font-weight:800;list-style-position:outside">
+      ⚙ Cài đặt số dư ban đầu
+      <span style="display:block;font-size:11px;font-weight:500;color:var(--ink-faint);margin-top:4px">Không cần mở trong sử dụng hằng ngày</span>
+    </summary>
+    <div style="margin-top:14px">
+      ${viewSetupPanel(false)}
+    </div>
+  </details>
+
 
   <div class="panel">
     <h3 style="margin-bottom:14px;">Sao lưu</h3>
