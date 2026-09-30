@@ -706,10 +706,224 @@
   }
 
 
-  #initialBalanceSettings > div > #setupPanel{
-    box-shadow:none; border:0; padding:0; margin:0; background:transparent;
+  /* ==========================================================
+     UX v6 — consistent geometry, mobile-first polish
+     ========================================================== */
+  html{scroll-behavior:smooth; overflow-x:hidden;}
+  body{overflow-x:hidden;}
+  main, .masthead-inner, .tabs-inner{width:100%;}
+  main > *, .panel > *, .card > *, .summary-chip > *, .field, .toolbar > *,
+  .month-nav > *, .data-action-card > *, .settings-card > *{min-width:0;}
+
+  /* One rhythm for all primary surfaces */
+  .section-title{letter-spacing:-.015em;}
+  .section-sub{max-width:780px;}
+  .panel, .card, .month-nav, .chart-panel, .settings-card, .data-action-card{
+    border-color:var(--line-soft);
   }
-  #initialBalanceSettings summary::-webkit-details-marker{margin-right:7px;}
+  .panel, .chart-panel, .settings-card, .data-action-card{
+    box-shadow:0 1px 2px rgba(30,42,60,.035), 0 7px 24px rgba(30,42,60,.045);
+  }
+
+  /* Dashboard cards: equal visual baseline and no accidental overflow */
+  .cards{grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); align-items:stretch;}
+  .card{display:flex; flex-direction:column; min-height:112px;}
+  .card-label{min-height:30px;}
+  .card-value{
+    margin-top:auto; letter-spacing:-.025em; overflow-wrap:anywhere;
+  }
+  .card-sub{margin-top:7px;}
+  .banner{box-shadow:0 1px 2px rgba(30,42,60,.025);}
+
+  /* Inputs and buttons feel like one system */
+  .field input, .field select, .add-form input, .add-form select, .btn{
+    transition:border-color .16s ease, box-shadow .16s ease, background .16s ease, transform .08s ease;
+  }
+  .btn:active{transform:translateY(1px);}
+  button:focus-visible, .btn:focus-visible, input:focus-visible, select:focus-visible,
+  summary:focus-visible, label.file-pick-btn:focus-visible{
+    outline:3px solid rgba(79,70,229,.18); outline-offset:2px;
+  }
+
+  /* Prevent flex/grid geometry from pushing the page sideways */
+  .meta-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .summary-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
+  .summary-chip{min-width:0;}
+  .toolbar{min-width:0;}
+  .table-scroll{max-width:100%;}
+  table{max-width:100%;}
+  img,svg{max-width:100%;}
+
+  /* Tabs: app-like horizontal rail */
+  .tabs-inner{scroll-snap-type:x proximity;}
+  .tab-btn{scroll-snap-align:center;}
+  .tab-btn.active{background:linear-gradient(to bottom, transparent 74%, rgba(79,70,229,.045));}
+
+  /* Month control: perfectly centered title, stable button sizes */
+  .month-nav{display:grid; grid-template-columns:44px minmax(0,1fr) 44px auto; gap:7px;}
+  .month-pick{width:100%;}
+  .month-pick-cycle{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  .month-nav-today:empty{display:none;}
+
+  /* ----- Settings & Data ----- */
+  .page-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;}
+
+  .settings-card{
+    background:var(--panel); border:1px solid var(--line-soft); border-radius:16px;
+    margin-bottom:20px; overflow:hidden;
+  }
+  .settings-summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+    gap:14px; padding:16px 17px; user-select:none;
+  }
+  .settings-summary::-webkit-details-marker{display:none;}
+  .settings-summary-main{display:flex; align-items:center; gap:11px; min-width:0;}
+  .settings-summary-icon{
+    width:36px; height:36px; border-radius:10px; background:var(--brass-soft); color:#3730A3;
+    display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; font-size:16px;
+  }
+  .settings-summary-main b{display:block; font-size:14px; color:var(--ink);}
+  .settings-summary-main small{
+    display:block; color:var(--ink-soft); font-size:11.5px; font-weight:500; margin-top:2px;
+  }
+  .settings-chevron{
+    color:var(--ink-faint); font-size:18px; line-height:1; transition:transform .2s ease; flex:0 0 auto;
+  }
+  .settings-card[open] .settings-chevron{transform:rotate(180deg);}
+  .settings-card[open] .settings-summary{border-bottom:1px solid var(--line-soft);}
+  .settings-body{padding:17px;}
+
+  .settings-intro{
+    display:flex; gap:12px; align-items:flex-start; padding-bottom:16px; margin-bottom:16px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .settings-icon{
+    width:38px; height:38px; border-radius:11px; background:var(--paper-2); color:var(--brass);
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  .settings-intro b{font-size:14px;}
+  .settings-intro p{margin:3px 0 0; color:var(--ink-soft); line-height:1.5; font-size:12.5px;}
+  .settings-group + .settings-group{margin-top:18px; padding-top:18px; border-top:1px solid var(--line-soft);}
+  .settings-group-title{font-weight:700; font-size:12.5px; margin-bottom:10px; color:var(--ink);}
+  .settings-note{
+    margin-top:9px; color:var(--ink-soft); font-size:11.5px; line-height:1.45;
+  }
+  .settings-warning{
+    padding:10px 12px; margin-bottom:11px; background:#FFF8E8; border:1px solid #F4D79B;
+    border-radius:10px; color:#76510B; font-size:11.5px; line-height:1.5;
+  }
+  .meta-grid-cycle{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .meta-grid-balance{grid-template-columns:repeat(2,minmax(0,1fr));}
+
+  .data-section-head{margin:3px 0 11px;}
+  .data-section-head h3{margin:0 0 3px; font-size:14px;}
+  .data-section-head p{margin:0; color:var(--ink-soft); font-size:12px; line-height:1.5;}
+  .data-action-grid{
+    display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; align-items:stretch;
+  }
+  .data-action-card{
+    background:var(--panel); border:1px solid var(--line-soft); border-radius:15px;
+    padding:15px; display:flex; flex-direction:column; gap:11px; min-height:210px;
+  }
+  .data-action-icon{
+    width:34px; height:34px; border-radius:10px; background:var(--paper-2); color:var(--brass);
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px;
+  }
+  .data-action-copy{flex:1 1 auto;}
+  .data-action-copy h3{font-family:'Inter',sans-serif; font-size:13.5px; margin:0 0 5px;}
+  .data-action-copy p{font-size:11.5px; line-height:1.5; color:var(--ink-soft); margin:0;}
+  .data-action-btn{
+    width:100%!important; min-height:42px; display:inline-flex; align-items:center; justify-content:center;
+    text-align:center; text-decoration:none; margin-top:auto;
+  }
+  .file-pick-btn{cursor:pointer;}
+  .file-input-hidden{
+    position:absolute!important; width:1px!important; height:1px!important; padding:0!important;
+    margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important;
+    white-space:nowrap!important; border:0!important;
+  }
+  .danger-zone{border-color:#F4D0CE;}
+  .danger-zone .data-action-icon{background:var(--rust-bg); color:var(--rust);}
+
+  /* Old nested-settings override no longer needed */
+
+  @media (hover:hover) and (pointer:fine){
+    .card, .panel, .chart-panel, .settings-card, .data-action-card{
+      transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    }
+    .data-action-card:hover, .settings-card:hover{
+      transform:translateY(-1px);
+      box-shadow:0 2px 4px rgba(30,42,60,.045), 0 10px 28px rgba(30,42,60,.065);
+      border-color:var(--line);
+    }
+  }
+
+  @media (max-width:700px){
+    main{width:100%; max-width:100%; padding-top:12px;}
+    .section-sub{margin-bottom:13px;}
+
+    .cards{grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
+    .card{min-height:106px; padding:11px;}
+    .card.wide{grid-column:1 / -1; min-height:auto;}
+    .card-label{font-size:10px; min-height:28px;}
+    .card-value{font-size:clamp(13.5px,4vw,16px); line-height:1.25;}
+
+    .month-nav{grid-template-columns:42px minmax(0,1fr) 42px auto; padding:6px;}
+    .month-nav-btn{width:42px; height:42px;}
+    .month-nav-today{min-width:42px; height:42px;}
+    .month-pick-main{font-size:15.5px;}
+
+    .summary-row{grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px;}
+    .summary-chip{padding:9px 10px; font-size:10.5px;}
+    .summary-chip b{font-size:13px; overflow-wrap:anywhere;}
+
+    /* Mobile table rows: aligned labels/values without horizontal drift */
+    tbody td{
+      display:grid; grid-template-columns:minmax(92px,40%) minmax(0,1fr);
+      align-items:center; justify-content:initial; gap:10px; text-align:right;
+    }
+    tbody td::before{min-width:0;}
+    tbody td > *{min-width:0; max-width:100%;}
+    table input, table select{max-width:100%; width:100%;}
+    td.num, td.center{text-align:right;}
+
+    .settings-card{border-radius:14px; margin-bottom:18px;}
+    .settings-summary{padding:13px 14px;}
+    .settings-summary-icon{width:34px; height:34px;}
+    .settings-body{padding:14px;}
+    .settings-intro{display:none;}
+    .meta-grid-cycle, .meta-grid-balance{grid-template-columns:1fr 1fr;}
+    .meta-grid-cycle .field:last-child{grid-column:1 / -1;}
+    .settings-group-title{margin-bottom:9px;}
+    .settings-warning{font-size:11px;}
+
+    .data-action-grid{grid-template-columns:1fr; gap:9px;}
+    .data-action-card{
+      min-height:0; padding:13px; display:grid;
+      grid-template-columns:36px minmax(0,1fr); column-gap:10px; row-gap:10px;
+    }
+    .data-action-icon{grid-column:1; grid-row:1;}
+    .data-action-copy{grid-column:2; grid-row:1;}
+    .data-action-btn{grid-column:1 / -1; margin-top:0;}
+  }
+
+  @media (max-width:380px){
+    .cards{grid-template-columns:1fr;}
+    .card.wide{grid-column:auto;}
+    .summary-row{grid-template-columns:1fr;}
+    .meta-grid-cycle, .meta-grid-balance{grid-template-columns:1fr;}
+    .meta-grid-cycle .field:last-child{grid-column:auto;}
+    .month-pick-cycle{display:none;}
+  }
+
+
+  .page-head{gap:12px;}
+  .page-head #syncStatus{flex:0 0 auto; margin-top:1px;}
+  @media(max-width:700px){
+    .page-head{align-items:center;}
+    .page-head .section-sub{margin-bottom:0;}
+    .page-head #syncStatus{font-size:10px; min-height:26px; padding:4px 8px;}
+  }
 
 </style>
 </head>
@@ -807,7 +1021,7 @@ const TABS = [
   {id:'chotra', label:'Chờ thu'},
   {id:'duno', label:'Dư nợ'},
   {id:'vay', label:'Vay'},
-  {id:'data', label:'Dữ liệu'},
+  {id:'data', label:'Cài đặt'},
 ];
 const LOAI_MAC_DINH = [
   {loai:'Ăn sáng', donGia:10000, cheDo:'auto', soBuoiCoDinh:0},
@@ -1303,6 +1517,14 @@ function renderMasthead(){
 function renderTabs(){
   const el = document.getElementById('tabsInner');
   el.innerHTML = TABS.map(t=>`<button class="tab-btn ${state.ui.currentTab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
+  requestAnimationFrame(()=>{
+    const active=el.querySelector('.tab-btn.active');
+    if(!active) return;
+    const left=active.offsetLeft, right=left+active.offsetWidth;
+    if(left < el.scrollLeft || right > el.scrollLeft + el.clientWidth){
+      active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+    }
+  });
 }
 /* keepScroll: giữ nguyên vị trí cuộn sau khi vẽ lại. Khi bấm mũi tên đổi tháng mà trang
    nhảy vọt về đầu, người dùng tưởng nút không ăn và bấm thêm lần nữa — chính là cách cũ
@@ -1331,30 +1553,48 @@ function renderAll(opts){
    ========================================================== */
 function viewSetupPanel(highlight){
   return `
-  <div class="panel" id="setupPanel">
-    <h3>Cài đặt số dư ban đầu</h3>
-    <p class="hint"><b>Chỉ sửa khi bạn thật sự muốn đổi mốc ban đầu.</b> TPBank và tiền mặt ở đây là số tiền lúc bắt đầu dùng sổ, không phải số dư ngân hàng hiện tại. Thay đổi hai số này sẽ làm thay đổi số dư được tính trên toàn bộ sổ.</p>
-    <div class="meta-grid">
+  <div class="settings-intro">
+    <div class="settings-icon" aria-hidden="true">⚙</div>
+    <div>
+      <b>Thiết lập sổ</b>
+      <p>Đây là thông tin nền của sổ. Bình thường không cần đụng tới; chỉ mở khi bạn muốn đổi chu kỳ hoặc mốc số dư ban đầu.</p>
+    </div>
+  </div>
+
+  <div class="settings-group">
+    <div class="settings-group-title">Chu kỳ ghi chép</div>
+    <div class="meta-grid meta-grid-cycle">
       <div class="field">
-        <label>Chu kỳ hiện tại (tháng bắt đầu)</label>
+        <label>Tháng bắt đầu chu kỳ</label>
         <select data-meta="thang" data-type="number">
           ${Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}" ${m===state.meta.thang?'selected':''}>Tháng ${m}</option>`).join('')}
         </select>
       </div>
       <div class="field">
-        <label>Năm bắt đầu chu kỳ</label>
+        <label>Năm bắt đầu</label>
         <input type="number" data-meta="nam" data-type="number" value="${state.meta.nam}">
       </div>
       <div class="field">
-        <label>Ghi nhận ngày</label>
+        <label>Ngày ghi nhận</label>
         <input type="date" data-meta="ghiNhanNgay" data-type="text" value="${state.meta.ghiNhanNgay||''}">
       </div>
+    </div>
+    <div class="settings-note">Mỗi chu kỳ chạy từ ngày <b>11</b> của tháng này đến hết ngày <b>10</b> của tháng sau.</div>
+  </div>
+
+  <div class="settings-group settings-group-balance">
+    <div class="settings-group-title">Mốc số dư ban đầu</div>
+    <div class="settings-warning">
+      <b>Không cập nhật hai ô này theo số dư ngân hàng hằng ngày.</b>
+      Đây là mốc lúc bắt đầu dùng sổ; thay đổi sẽ làm thay đổi số dư được tính trên toàn bộ dữ liệu.
+    </div>
+    <div class="meta-grid meta-grid-balance">
       <div class="field">
-        <label>Số dư TPBank (ban đầu)</label>
+        <label>TPBank ban đầu</label>
         <input type="text" inputmode="numeric" data-meta="tpbank" data-type="money" value="${formatNumberPlain(state.meta.tpbank)}">
       </div>
-      <div class="field field-full">
-        <label>Tiền mặt (ban đầu)</label>
+      <div class="field">
+        <label>Tiền mặt ban đầu</label>
         <input type="text" inputmode="numeric" data-meta="tienMat" data-type="money" value="${formatNumberPlain(state.meta.tienMat)}">
       </div>
     </div>
@@ -1369,10 +1609,6 @@ function viewTCCN(){
 
   const t = computeTCCNForMonth(viewThang, viewNam);
   const firstSetup = isFirstSetup();
-
-  const setupBanner = firstSetup ? `
-  <div class="banner setup">👋 <div><b>Cần thiết lập lần đầu:</b> vào tab <b>Dữ liệu</b> → <b>Cài đặt số dư ban đầu</b>. Sau khi thiết lập, số dư ban đầu sẽ không xuất hiện trên Tổng quan nữa.</div></div>
-  ` : '';
 
   const monthNav = renderMonthNav('tccn', viewThang, viewNam, rel);
 
@@ -1398,7 +1634,7 @@ function viewTCCN(){
 
   const ngsLabel = rel===0 ? 'Ngân sách còn cần dùng' : (rel<0 ? 'Ngân sách còn thiếu (nếu có)' : 'Ngân sách cần dùng');
   const daChiChip = (rel<=0) ? `
-    <div class="card ${coVuotNganSach?'rust':'brass'}">
+    <div class="card wide ${coVuotNganSach?'rust':'brass'}">
       <div class="card-label">Đã chi / Ngân sách chu kỳ ${viewThang}/${viewNam}</div>
       <div class="card-value ${coVuotNganSach?'rust':''}">${fmt(t.bbSumXem.sumDaChi)} / ${fmt(t.bbSumXem.soTienTrongThangCan)}</div>
     </div>` : '';
@@ -1423,12 +1659,12 @@ function viewTCCN(){
       <div class="card-value">${fmt(t.duNoVAY)}</div>
     </div>
     <div class="card brass">
-      <div class="card-label">${ngsLabel} (tháng ${viewThang}/${viewNam})</div>
+      <div class="card-label">${ngsLabel} · chu kỳ ${viewThang}/${viewNam}</div>
       <div class="card-value">${fmt(t.bbSumXem.soTienCanThucTe)}</div>
       ${rel===0 ? `<div class="card-sub">Còn ${daysRemainingInCycle()} ngày (đến ${cycleEndDate().getDate()}/${cycleEndDate().getMonth()+1})</div>` : ''}
     </div>
     <div class="card jade">
-      <div class="card-label">Tổng cần cho tháng ${viewThang}/${viewNam} (đã gồm khoản vay)</div>
+      <div class="card-label">Tổng cần cho chu kỳ ${viewThang}/${viewNam} (đã gồm khoản vay)</div>
       <div class="card-value jade">${fmt(t.tongCanThangXem)}</div>
     </div>
     <div class="card ${thieuHutDuKien?'rust':'jade'}">
@@ -1446,7 +1682,7 @@ function viewTCCN(){
       <div class="card-value">${fmt(t.soDuDayDu)}</div>
     </div>
     <div class="card rust">
-      <div class="card-label">Dư nợ đến hạn tháng ${viewThang}/${viewNam}</div>
+      <div class="card-label">Dư nợ đến hạn chu kỳ ${viewThang}/${viewNam}</div>
       <div class="card-value">${fmt(t.duNoThangXem)}</div>
     </div>
     <div class="card rust">
@@ -1454,20 +1690,19 @@ function viewTCCN(){
       <div class="card-value">${fmt(t.duNoVAY)}</div>
     </div>
     <div class="card brass">
-      <div class="card-label">${ngsLabel} (tháng ${viewThang}/${viewNam})</div>
+      <div class="card-label">${ngsLabel} · chu kỳ ${viewThang}/${viewNam}</div>
       <div class="card-value">${fmt(t.bbSumXem.soTienCanThucTe)}</div>
     </div>
     <div class="card rust">
-      <div class="card-label">Tổng cần cộng dồn (${t.months.length} tháng, kể cả nay, đã gồm khoản vay)</div>
+      <div class="card-label">Tổng cần cộng dồn (${t.months.length} chu kỳ, đã gồm khoản vay)</div>
       <div class="card-value">${fmt(t.tongCanLuyKe)}</div>
     </div>
     <div class="card ${thieuHutDuKien?'rust':'jade'}">
-      <div class="card-label">Dự kiến dư/thiếu đến hết tháng ${viewThang}/${viewNam}</div>
+      <div class="card-label">Dự kiến dư/thiếu đến hết chu kỳ ${viewThang}/${viewNam}</div>
       <div class="card-value ${thieuHutDuKien?'rust':'jade'}">${fmt(t.buTruDuKien)}</div>
     </div>
   </div>`;
 
-  const setupPanel = viewSetupPanel(firstSetup);
 
   const summaryChips = `
   <div class="panel">
@@ -1475,14 +1710,14 @@ function viewTCCN(){
     <div class="summary-row">
       <div class="summary-chip">Đang cho vay chưa thu<b>${fmt(t.chovayOutstanding)}</b></div>
       <div class="summary-chip">Đang chờ thu về<b>${fmt(t.chotraOutstanding)}</b></div>
-      <div class="summary-chip">Dư nợ trả góp đến hạn tháng ${viewThang}/${viewNam}<b>${fmt(t.duNoThangXem)}</b></div>
+      <div class="summary-chip">Dư nợ trả góp đến hạn chu kỳ ${viewThang}/${viewNam}<b>${fmt(t.duNoThangXem)}</b></div>
       <div class="summary-chip">Khoản vay chưa trả (không theo tháng)<b>${fmt(t.duNoVAY)}</b></div>
     </div>
   </div>`;
 
   const hangMucVuotDetail = (coVuotNganSach && rel<=0) ? `
   <div class="panel">
-    <h3 style="margin-bottom:6px;">Hạng mục đã chi vượt ngân sách tháng ${viewThang}/${viewNam}</h3>
+    <h3 style="margin-bottom:6px;">Hạng mục đã chi vượt ngân sách chu kỳ ${viewThang}/${viewNam}</h3>
     <p class="hint">Đây là những hạng mục đã tiêu nhiều hơn ngân sách dự kiến — phần vượt đã trừ thẳng vào số dư thực tế, không được cấn trừ bằng hạng mục khác còn dư.</p>
     <div class="table-scroll">
       <table>
@@ -1502,8 +1737,8 @@ function viewTCCN(){
 
   const projectionDetail = rel>0 ? `
   <div class="panel">
-    <h3 style="margin-bottom:6px;">Chi tiết dự phóng từ tháng ${curThang}/${curNam} đến tháng ${viewThang}/${viewNam}</h3>
-    <p class="hint">Cộng dồn ngân sách còn cần và dư nợ trả góp đến hạn của từng tháng trong khoảng này, để biết tổng cộng bạn cần chuẩn bị bao nhiêu trước khi tới tháng ${viewThang}/${viewNam}.</p>
+    <h3 style="margin-bottom:6px;">Chi tiết dự phóng từ chu kỳ ${curThang}/${curNam} đến ${viewThang}/${viewNam}</h3>
+    <p class="hint">Cộng dồn ngân sách còn cần và dư nợ trả góp đến hạn của từng chu kỳ trong khoảng này, để biết tổng cộng bạn cần chuẩn bị bao nhiêu trước khi tới chu kỳ ${viewThang}/${viewNam}.</p>
     <div class="table-scroll">
       <table>
         <thead><tr><th>Tháng</th><th class="num">Ngân sách cần</th><th class="num">Dư nợ đến hạn</th><th class="num">Tổng cần</th></tr></thead>
@@ -1534,10 +1769,7 @@ function viewTCCN(){
   <div class="section-title">Tổng quan</div>
   <p class="section-sub">Bức tranh tài chính tổng hợp — dùng nút ‹ › để xem trước ngân sách và nợ đến hạn của các tháng tương lai, giúp tính ra cần tiết kiệm bao nhiêu mới đủ trả nợ.</p>`;
 
-  if(firstSetup){
-    return header + monthNav + setupBanner + setupPanel + cardsBlock + summaryChips;
-  }
-  return header + monthNav + statusBanner + vuotBanner + cardsBlock + hangMucVuotDetail + projectionDetail + setupPanel + summaryChips;
+  return header + monthNav + statusBanner + vuotBanner + cardsBlock + hangMucVuotDetail + projectionDetail + summaryChips;
 }
 
 /* ==========================================================
@@ -2387,37 +2619,70 @@ function viewVay(){
    VIEW: Dữ liệu (Import/Export/Reset)
    ========================================================== */
 function viewData(){
+  const syncState = !navigator.onLine ? 'offline' : (cloudDirty ? 'saving' : (cloudReady ? 'saved' : 'saving'));
+  const syncText = syncState==='offline' ? '☁ Chưa đồng bộ'
+    : syncState==='saving' ? (cloudReady ? '↻ Đang lưu…' : '↻ Đang kết nối…')
+    : '☁ Đã lưu';
   return `
-  <div class="section-title">Dữ liệu</div>
-  <p class="section-sub">Dữ liệu nghiệp vụ đang lưu trên Supabase và có thể dùng lại trên thiết bị khác. JSON bên dưới là bản sao lưu thủ công bổ sung.</p>
+  <div class="page-head">
+    <div>
+      <div class="section-title">Cài đặt & dữ liệu</div>
+      <p class="section-sub">Những thứ ít khi cần dùng được gom vào đây để các màn hình hằng ngày luôn gọn.</p>
+    </div>
+    <span id="syncStatus" data-state="${syncState}">${syncText}</span>
+  </div>
 
-  <details class="panel" id="initialBalanceSettings" ${isFirstSetup()?'open':''}>
-    <summary style="cursor:pointer;font-weight:800;list-style-position:outside">
-      ⚙ Cài đặt số dư ban đầu
-      <span style="display:block;font-size:11px;font-weight:500;color:var(--ink-faint);margin-top:4px">Không cần mở trong sử dụng hằng ngày</span>
+  <details class="settings-card" id="initialBalanceSettings" ${isFirstSetup()?'open':''}>
+    <summary class="settings-summary">
+      <div class="settings-summary-main">
+        <span class="settings-summary-icon">⚙</span>
+        <span>
+          <b>Thiết lập sổ</b>
+          <small>Chu kỳ 11→10 và mốc số dư ban đầu</small>
+        </span>
+      </div>
+      <span class="settings-chevron" aria-hidden="true">⌄</span>
     </summary>
-    <div style="margin-top:14px">
+    <div class="settings-body">
       ${viewSetupPanel(false)}
     </div>
   </details>
 
-
-  <div class="panel">
-    <h3 style="margin-bottom:14px;">Sao lưu</h3>
-    <p class="hint">Tải toàn bộ dữ liệu (Tổng quan, Chi tiêu, Ngân sách, Cho vay, Chờ thu, Dư nợ, Vay) thành một file JSON.</p>
-    <button class="btn primary" id="btnExport">↓ Tải xuống JSON</button>
+  <div class="data-section-head">
+    <div>
+      <h3>Sao lưu & khôi phục</h3>
+      <p>Dữ liệu nghiệp vụ đang đồng bộ với Supabase. File JSON là bản sao dự phòng thủ công của bạn.</p>
+    </div>
   </div>
 
-  <div class="panel">
-    <h3 style="margin-bottom:14px;">Khôi phục</h3>
-    <p class="hint">Chọn file JSON đã tải xuống trước đó để khôi phục — sẽ ghi đè toàn bộ dữ liệu hiện tại.</p>
-    <input type="file" id="fileImport" accept="application/json">
-  </div>
+  <div class="data-action-grid">
+    <section class="data-action-card">
+      <div class="data-action-icon">↓</div>
+      <div class="data-action-copy">
+        <h3>Tải bản sao lưu</h3>
+        <p>Lưu toàn bộ giao dịch, ngân sách, khoản vay và thiết lập thành một file JSON.</p>
+      </div>
+      <button class="btn primary data-action-btn" id="btnExport">Tải xuống JSON</button>
+    </section>
 
-  <div class="panel">
-    <h3 style="margin-bottom:14px;">Xoá toàn bộ dữ liệu</h3>
-    <p class="hint">Đưa dữ liệu trên Supabase về trạng thái trống hoàn toàn. Không thể hoàn tác — hãy tải xuống JSON trước nếu cần.</p>
-    <button class="btn danger" id="btnReset">Xoá toàn bộ dữ liệu</button>
+    <section class="data-action-card">
+      <div class="data-action-icon">↥</div>
+      <div class="data-action-copy">
+        <h3>Khôi phục dữ liệu</h3>
+        <p>Chọn một file JSON đã sao lưu trước đó. Dữ liệu hiện tại sẽ được hỏi xác nhận trước khi ghi đè.</p>
+      </div>
+      <label class="btn data-action-btn file-pick-btn" for="fileImport">Chọn file JSON</label>
+      <input class="file-input-hidden" type="file" id="fileImport" accept="application/json,.json">
+    </section>
+
+    <section class="data-action-card danger-zone">
+      <div class="data-action-icon">!</div>
+      <div class="data-action-copy">
+        <h3>Xoá toàn bộ dữ liệu</h3>
+        <p>Đưa sổ về trạng thái mới. Hãy tải bản sao lưu trước nếu còn muốn giữ dữ liệu.</p>
+      </div>
+      <button class="btn danger data-action-btn" id="btnReset">Xoá toàn bộ dữ liệu</button>
+    </section>
   </div>
   `;
 }
@@ -2876,7 +3141,7 @@ document.addEventListener('change', e=>{
     return;
   }
 
-  // Meta fields (Tổng quan settings)
+  // Meta fields (Thiết lập sổ)
   if(el.dataset && el.dataset.meta){
     const field = el.dataset.meta, type = el.dataset.type || 'text';
     let val;
