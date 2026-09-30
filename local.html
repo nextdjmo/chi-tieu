@@ -617,39 +617,9 @@
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:.01ms !important; transition-duration:.01ms !important;}
   }
-
-  /* ---------- Login ---------- */
-  .auth-overlay{position:fixed;inset:0;z-index:500;background:var(--paper);display:flex;align-items:center;justify-content:center;padding:20px;}
-  .auth-overlay.hidden{display:none;}
-  .auth-card{width:100%;max-width:390px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow);}
-  .auth-card h2{margin:0 0 5px;font-family:'Fraunces',serif;font-size:24px;}
-  .auth-card p{margin:0 0 18px;color:var(--ink-soft);}
-  .auth-card input{width:100%;height:46px;margin:0 0 10px;padding:0 13px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:16px;}
-  .auth-card button{width:100%;height:46px;border:0;border-radius:var(--r-sm);background:var(--brass);color:#fff;font-weight:700;cursor:pointer;margin-top:4px;}
-  .auth-card .secondary{background:var(--paper-2);color:var(--ink);border:1px solid var(--line);margin-top:9px;}
-  .auth-error{min-height:18px;margin-top:10px!important;color:var(--rust)!important;font-size:12px;}
-  .account-bar{position:fixed;right:10px;top:calc(7px + var(--sa-top));z-index:80;font-size:11px;color:#fff;display:none;align-items:center;gap:7px;}
-  .account-bar button{border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.14);color:#fff;border-radius:8px;padding:5px 8px;font-size:11px;}
-
 </style>
 </head>
 <body>
-
-<div class="auth-overlay" id="authOverlay">
-  <div class="auth-card">
-    <h2>Sổ Chi Tiêu</h2>
-    <p>Đăng nhập tài khoản của bạn</p>
-    <form id="loginForm">
-      <input id="loginUsername" autocomplete="username" placeholder="Tên đăng nhập" required>
-      <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu" required>
-      <button type="submit">Đăng nhập</button>
-    </form>
-    <p style="margin-top:12px;font-size:12px;color:#667085">Tài khoản được quản trị viên tạo trước trong Supabase Authentication.</p>
-    <p class="auth-error" id="authError"></p>
-  </div>
-</div>
-<div class="account-bar" id="accountBar"><span id="accountName"></span><button id="logoutBtn" type="button">Đăng xuất</button></div>
-
 
 <header class="masthead">
   <div class="masthead-inner">
@@ -665,8 +635,8 @@
 <main id="app"></main>
 
 <footer>
-  Dữ liệu nghiệp vụ được đồng bộ với Supabase. Thiết lập giao diện được lưu cục bộ trên thiết bị này.
-  Bạn vẫn có thể tải xuống JSON ở tab <b>Dữ liệu</b> để có thêm một bản sao lưu.
+  Dữ liệu được lưu trong trình duyệt này (localStorage) — không đồng bộ qua thiết bị khác.
+  Hãy tải xuống JSON định kỳ ở tab <b>Dữ liệu</b> để sao lưu.
 </footer>
 
 <!-- Nút nổi thêm chi tiêu nhanh -->
@@ -708,7 +678,6 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ==========================================================
    STATE
@@ -781,93 +750,16 @@ function migrateUI(obj){
   return obj;
 }
 
-/* ==========================================================
-   SUPABASE AUTH + MULTI-USER SYNC
-   - Mỗi user có đúng 1 hàng trong app_state_v2, khóa bằng auth.uid()
-   - UI vẫn lưu localStorage theo từng user trên từng thiết bị
-   ========================================================== */
-const SUPABASE_URL = 'https://ngnrlvcgwkayehkzhdap.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_V1wWHHnyuHr5-ChR8lU_7Q_cSe4jo6q';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-let currentUser = null;
-let currentUsername = '';
-let cloudReady = false;
-let cloudSaveTimer = null;
-let lastCloudJson = '';
-let state = defaultState();
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return migrateUI(JSON.parse(raw));
+  }catch(e){ console.warn('Không đọc được dữ liệu cũ, khởi tạo mới.', e); }
+  return defaultState();
+}
 
-function usernameToEmail(username){
-  const u=String(username||'').trim().toLowerCase();
-  if(!/^[a-z0-9._-]{3,32}$/.test(u)) throw new Error('Tên đăng nhập dùng 3–32 ký tự: a-z, 0-9, dấu chấm, gạch dưới hoặc gạch ngang.');
-  return u + '@gmail.com';
-}
-function usernameFromUser(user){
-  return user?.user_metadata?.username || String(user?.email||'').split('@')[0] || 'user';
-}
-function uiStorageKey(){ return STORAGE_KEY+'_ui_'+(currentUser?.id||'guest'); }
-function loadLocalUI(){
-  try{ const raw=localStorage.getItem(uiStorageKey()); if(raw) return {...defaultUI(),...JSON.parse(raw)}; }catch(e){}
-  return defaultUI();
-}
-function cloudDataFromState(){
-  return {meta:state.meta,ct:state.ct,bb:state.bb,chovay:state.chovay,chotra:state.chotra,duno:state.duno,vay:state.vay};
-}
-function normalizeCloudData(data){
-  const d=defaultState();
-  const x=(data&&typeof data==='object')?data:{};
-  return migrateUI({
-    meta:{...d.meta,...(x.meta||{})},
-    ct:Array.isArray(x.ct)?x.ct:[], bb:Array.isArray(x.bb)?x.bb:d.bb,
-    chovay:Array.isArray(x.chovay)?x.chovay:[], chotra:Array.isArray(x.chotra)?x.chotra:[],
-    duno:Array.isArray(x.duno)?x.duno:[], vay:Array.isArray(x.vay)?x.vay:[], ui:loadLocalUI()
-  });
-}
-function saveState(){
-  try{ localStorage.setItem(uiStorageKey(),JSON.stringify(state.ui)); }catch(e){}
-  if(!cloudReady||!currentUser) return;
-  const json=JSON.stringify(cloudDataFromState()); if(json===lastCloudJson) return;
-  clearTimeout(cloudSaveTimer);
-  cloudSaveTimer=setTimeout(async()=>{
-    const current=cloudDataFromState(), currentJson=JSON.stringify(current);
-    const {error}=await sb.from('app_state_v2').upsert({user_id:currentUser.id,data:current,updated_at:new Date().toISOString()},{onConflict:'user_id'});
-    if(error){console.error(error);showSyncNotice('Không đồng bộ được dữ liệu.',true);return;}
-    lastCloudJson=currentJson; showSyncNotice('Đã đồng bộ Supabase.',false);
-  },350);
-}
-function showSyncNotice(message,isError){
-  let el=document.getElementById('syncNotice');
-  if(!el){el=document.createElement('div');el.id='syncNotice';el.style.cssText='position:fixed;right:12px;bottom:calc(88px + var(--sa-bottom));z-index:200;padding:8px 11px;border-radius:9px;font-size:11px;box-shadow:var(--shadow);transition:opacity .2s;pointer-events:none';document.body.appendChild(el);}
-  el.textContent=message;el.style.background=isError?'#FDE7E6':'#DFF7EA';el.style.color=isError?'#B42318':'#08703F';el.style.opacity='1';
-  clearTimeout(showSyncNotice._t);showSyncNotice._t=setTimeout(()=>el.style.opacity='0',isError?5000:1400);
-}
-async function loadUserData(user){
-  currentUser=user; currentUsername=usernameFromUser(user); cloudReady=false;
-  document.getElementById('accountName').textContent=currentUsername;
-  document.getElementById('accountBar').style.display='flex';
-  const {data:row,error}=await sb.from('app_state_v2').select('data').eq('user_id',user.id).maybeSingle();
-  if(error) throw error;
-  state=normalizeCloudData(row?.data);
-  if(!row){
-    const {error:ie}=await sb.from('app_state_v2').insert({user_id:user.id,data:cloudDataFromState()}); if(ie) throw ie;
-  }
-  lastCloudJson=JSON.stringify(cloudDataFromState()); cloudReady=true;
-  document.getElementById('authOverlay').classList.add('hidden'); renderAll();
-}
-async function handleSession(session){
-  if(session?.user){try{await loadUserData(session.user);}catch(e){document.getElementById('authError').textContent=e.message||String(e);}}
-  else{currentUser=null;cloudReady=false;document.getElementById('accountBar').style.display='none';document.getElementById('authOverlay').classList.remove('hidden');}
-}
-async function initSupabase(){
-  const {data}=await sb.auth.getSession(); await handleSession(data.session);
-  sb.auth.onAuthStateChange((_event,session)=>{ if(session?.user?.id!==currentUser?.id) setTimeout(()=>handleSession(session),0); });
-}
-document.getElementById('loginForm').addEventListener('submit',async e=>{
-  e.preventDefault(); const err=document.getElementById('authError');err.textContent='';
-  try{const email=usernameToEmail(document.getElementById('loginUsername').value);const password=document.getElementById('loginPassword').value;
-    const {error}=await sb.auth.signInWithPassword({email,password}); if(error) throw error;
-  }catch(ex){err.textContent='Đăng nhập thất bại: '+(ex.message||ex);}
-});
-document.getElementById('logoutBtn').addEventListener('click',()=>sb.auth.signOut());
+let state = loadState();
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
 /* Trạng thái mở/đóng của các khối "+ Thêm ..." — không cần lưu vào localStorage */
 const addOpen = {};
@@ -2145,7 +2037,7 @@ function viewVay(){
 function viewData(){
   return `
   <div class="section-title">Dữ liệu</div>
-  <p class="section-sub">Dữ liệu nghiệp vụ đang lưu trên Supabase và có thể dùng lại trên thiết bị khác. JSON bên dưới là bản sao lưu thủ công bổ sung.</p>
+  <p class="section-sub">Toàn bộ dữ liệu chỉ nằm trong trình duyệt này. Tải xuống JSON thường xuyên để không mất dữ liệu khi xoá cache/đổi máy.</p>
 
   <div class="panel">
     <h3 style="margin-bottom:14px;">Sao lưu</h3>
@@ -2161,7 +2053,7 @@ function viewData(){
 
   <div class="panel">
     <h3 style="margin-bottom:14px;">Xoá toàn bộ dữ liệu</h3>
-    <p class="hint">Đưa dữ liệu trên Supabase về trạng thái trống hoàn toàn. Không thể hoàn tác — hãy tải xuống JSON trước nếu cần.</p>
+    <p class="hint">Đưa sổ về trạng thái trống hoàn toàn. Không thể hoàn tác — hãy tải xuống JSON trước nếu cần.</p>
     <button class="btn danger" id="btnReset">Xoá toàn bộ dữ liệu</button>
   </div>
   `;
@@ -2577,7 +2469,7 @@ document.addEventListener('change', e=>{
           alert('File JSON không đúng định dạng của Sổ Chi Tiêu.');
           return;
         }
-        if(confirm('Khôi phục sẽ GHI ĐÈ dữ liệu hiện tại trên Supabase. Tiếp tục?')){
+        if(confirm('Khôi phục sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại. Tiếp tục?')){
           state = migrateUI(parsed);
           saveState(); renderAll();
         }
@@ -2635,7 +2527,6 @@ document.addEventListener('submit', e=>{
    INIT
    ========================================================== */
 renderAll();
-initSupabase();
 </script>
 </body>
 </html>
