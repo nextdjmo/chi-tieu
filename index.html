@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <title>Sổ Chi Tiêu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#F5F7FC;
@@ -96,18 +96,22 @@
   }
   .masthead-inner{
     max-width:1080px; margin:0 auto;
-    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:4px 14px;
+    display:flex; flex-direction:column; gap:5px;
+  }
+  .masthead-top{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:0;
   }
   .masthead-title{
     font-family:'Fraunces',serif; font-style:italic; font-weight:600;
-    font-size:21px; letter-spacing:.2px;
+    font-size:21px; letter-spacing:.2px; flex:0 1 auto; min-width:0;
   }
   .masthead-title span{color:var(--accent-2);}
   .masthead-meta{
-    font-family:'IBM Plex Mono',monospace; font-size:12px; color:rgba(255,255,255,.78);
-    display:flex; gap:6px 14px; flex-wrap:wrap;
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.35;
+    color:rgba(255,255,255,.78); min-height:16px;
   }
   .masthead-meta b{color:#FFFFFF; font-weight:600;}
+  .mh-mobile{display:none;}
 
   /* ---------- Nav tabs ---------- */
   nav.tabs{
@@ -537,6 +541,21 @@
      MOBILE (primary usage surface for this app)
      ========================================================== */
   @media (max-width: 700px){
+    header.masthead{
+      padding:calc(8px + var(--sa-top)) calc(12px + var(--sa-right)) 8px calc(12px + var(--sa-left));
+    }
+    .masthead-inner{gap:2px;}
+    .masthead-top{gap:8px;}
+    .masthead-title{font-size:17px; line-height:1.15; white-space:nowrap;}
+    .account-bar{gap:5px; font-size:10.5px;}
+    .account-bar span{max-width:112px;}
+    .account-bar button{padding:3px 7px; min-height:27px; font-size:10.5px; border-radius:7px;}
+    .masthead-meta{
+      font-size:10px; line-height:1.2; white-space:nowrap; overflow:hidden;
+      text-overflow:ellipsis; color:rgba(255,255,255,.72);
+    }
+    .mh-desktop{display:none;}
+    .mh-mobile{display:inline;}
     main{padding:14px 12px 84px;}
     .section-title{font-size:16px;}
     .panel{padding:14px 14px;}
@@ -599,6 +618,8 @@
      ========================================================== */
   @media (max-width: 440px){
     body{font-size:13.5px;}
+    .account-bar span{max-width:88px;}
+    .masthead-title{font-size:16px;}
     main{padding-left:calc(13px + var(--sa-left)); padding-right:calc(13px + var(--sa-right));
          padding-bottom:calc(96px + var(--sa-bottom));}
     .cards{grid-template-columns:1fr 1fr;}
@@ -629,29 +650,29 @@
   .auth-card .secondary{background:var(--paper-2);color:var(--ink);border:1px solid var(--line);margin-top:9px;}
   .auth-error{min-height:18px;margin-top:10px!important;color:var(--rust)!important;font-size:12px;}
   .account-bar{
-    position:absolute; right:10px; top:calc(7px + var(--sa-top)); z-index:10;
-    font-size:11px; color:#fff; display:none; align-items:center; gap:7px;
+    position:static; z-index:auto; font-size:11px; color:#fff;
+    display:none; align-items:center; gap:7px; min-width:0; flex:0 1 auto;
+  }
+  .account-bar span{
+    max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    color:rgba(255,255,255,.9);
   }
   .account-bar button{
-    border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.12);
-    color:#fff; border-radius:8px; padding:5px 8px; font-size:11px; line-height:1;
-  }
-  .account-user{
-    max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    font-weight:600;
+    border:1px solid rgba(255,255,255,.4); background:rgba(255,255,255,.14);
+    color:#fff; border-radius:8px; padding:5px 9px; min-height:30px; font-size:11px;
   }
 
 
   /* Cloud sync status: unobtrusive, but always tells the truth. */
   #syncStatus{
-    display:inline-flex; align-items:center; min-height:24px;
-    padding:4px 7px; border:1px solid rgba(255,255,255,.24); border-radius:999px;
-    font-size:10px; font-weight:600; color:rgba(255,255,255,.9); background:rgba(255,255,255,.10);
+    display:inline-flex; align-items:center; gap:6px; min-height:28px;
+    padding:5px 9px; border:1px solid var(--line); border-radius:999px;
+    font-size:11px; font-weight:600; color:var(--ink-soft); background:var(--paper);
     white-space:nowrap;
   }
-  #syncStatus[data-state="saving"]{color:#5E4300;background:#FFF3B8;border-color:#FFE082;}
-  #syncStatus[data-state="saved"]{color:#E8FFF2;background:rgba(16,185,129,.22);border-color:rgba(167,243,208,.35);}
-  #syncStatus[data-state="error"],#syncStatus[data-state="offline"]{color:#FFF1F0;background:rgba(220,38,38,.42);border-color:rgba(254,202,202,.45);}
+  #syncStatus[data-state="saving"]{color:#7A5B00;background:#FFF8D8;}
+  #syncStatus[data-state="saved"]{color:#08703F;background:#E9F8EF;}
+  #syncStatus[data-state="error"],#syncStatus[data-state="offline"]{color:#B42318;background:#FDE7E6;}
   #undoToast{
     position:fixed; left:50%; transform:translateX(-50%); bottom:calc(88px + var(--sa-bottom));
     z-index:240; display:none; align-items:center; gap:10px; max-width:calc(100vw - 24px);
@@ -674,7 +695,7 @@
   .priority-summary{margin:10px 0 14px;}
   .priority-summary .summary-chip{background:var(--paper);}
   @media(max-width:700px){
-    .list-toolbar{top:58px; margin:8px 0 10px; padding:6px;}
+    .list-toolbar{top:48px; margin:8px 0 10px; padding:6px;}
     .list-toolbar .btn{min-height:40px;}
   }
 
@@ -689,155 +710,6 @@
     box-shadow:none; border:0; padding:0; margin:0; background:transparent;
   }
   #initialBalanceSettings summary::-webkit-details-marker{margin-right:7px;}
-
-
-  /* Mobile compact chrome: content gets the screen, not account/settings metadata. */
-  @media(max-width:700px){
-    header.masthead{
-      padding:calc(10px + var(--sa-top)) calc(12px + var(--sa-right)) 9px calc(12px + var(--sa-left));
-    }
-    .masthead-inner{
-      display:grid;
-      grid-template-columns:auto 1fr auto;
-      min-height:28px; align-items:center; gap:8px;
-    }
-    .masthead-title{font-size:18px; line-height:1; white-space:nowrap;}
-    .masthead-meta{
-      margin:0; font-size:9.5px; line-height:1; white-space:nowrap;
-      opacity:.78; overflow:hidden; text-overflow:ellipsis;
-    }
-    .account-bar{
-      position:static; margin:0; font-size:10px; gap:4px; min-width:0;
-    }
-    .account-user{max-width:72px;}
-    .account-bar button{padding:4px 6px;font-size:10px;}
-    /* Khi đồng bộ bình thường thì không chiếm chỗ; lỗi/đang lưu mới hiện. */
-    #syncStatus[data-state="saved"]{display:none;}
-    #syncStatus{min-height:22px;padding:3px 6px;font-size:9px;}
-    nav.tabs{top:0;}
-  }
-
-
-  /* ==========================================================
-     V10 — Bright, minimal finance UI
-     ========================================================== */
-  :root{
-    --paper:#F7F7F8; --paper-2:#F1F1F2; --panel:#FFFFFF;
-    --ink:#202123; --ink-soft:#676A70; --ink-faint:#9A9CA2;
-    --brass:#10A37F; --brass-soft:#EAF7F3;
-    --jade:#0F9D78; --jade-bg:#EAF7F3;
-    --rust:#D84A4A; --rust-bg:#FCEEEE;
-    --line:#E3E3E5; --line-soft:#EFEFF1; --white:#FFFFFF;
-    --header-grad:#FFFFFF; --accent-2:#10A37F;
-    --shadow:0 1px 2px rgba(0,0,0,.025),0 5px 18px rgba(0,0,0,.035);
-    --r-sm:12px; --r-md:16px; --r-lg:24px;
-  }
-  [hidden]{display:none!important;}
-  html{background:var(--paper);min-height:100%;}
-  body{
-    background:var(--paper);color:var(--ink);font-family:'Manrope',system-ui,-apple-system,sans-serif;
-    font-size:13px;line-height:1.5;min-height:100dvh;height:auto!important;overflow-x:hidden;
-    overscroll-behavior-y:auto;
-  }
-  #app,main{height:auto!important;min-height:0!important;}
-  .mono,.money,.card-value,.summary-chip b,.budget-summary b{font-family:'DM Mono',ui-monospace,monospace!important;letter-spacing:-.03em;}
-
-  header.masthead{background:#fff;color:var(--ink);padding:calc(12px + var(--sa-top)) calc(14px + var(--sa-right)) 12px calc(14px + var(--sa-left));border-bottom:1px solid var(--line);box-shadow:none;}
-  .masthead-inner{max-width:1080px;display:grid;grid-template-columns:auto minmax(90px,1fr) auto;align-items:center;gap:10px;margin:0 auto;}
-  .masthead-title{font-family:'Manrope',sans-serif;font-style:normal;font-size:20px;font-weight:800;letter-spacing:-.05em;white-space:nowrap;color:#202123;}
-  .masthead-title span{color:#10A37F;}
-  .masthead-meta{justify-self:stretch;display:block;min-width:0;background:#F3F3F4;border:1px solid #E5E5E7;border-radius:999px;padding:5px 10px;color:#666970;font-family:'DM Mono',monospace;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;}
-  .account-bar{position:static!important;margin:0!important;display:none;align-items:center;gap:7px;min-width:0;color:#54575C;font-size:10px;white-space:nowrap;}
-  .account-user{max-width:84px;overflow:hidden;text-overflow:ellipsis;font-weight:700;color:#54575C;}
-  .account-bar button{border:1px solid #DEDEE0;background:#F8F8F9;color:#3F4247;border-radius:10px;padding:6px 9px;font-size:10px;line-height:1;}
-  #syncStatus{display:inline-flex;align-items:center;min-height:24px;padding:4px 7px;border:1px solid #DCECE6;border-radius:999px;font-size:9px;font-weight:700;color:#13795B;background:#EFF8F5;white-space:nowrap;}
-  #syncStatus[data-state="saving"]{color:#7A5B00;background:#FFF8D8;border-color:#F4E8A6;}
-  #syncStatus[data-state="error"],#syncStatus[data-state="offline"]{color:#A33E3E;background:#FFF0F0;border-color:#F1D6D6;}
-
-  nav.tabs{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.95);border-bottom:1px solid var(--line);box-shadow:none;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);padding:0 var(--sa-right) 0 var(--sa-left);}
-  .tabs-inner{max-width:1080px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding:7px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
-  .tabs-inner::-webkit-scrollbar{display:none;}
-  .tab-btn{appearance:none;border:0;background:transparent;color:#6C7076;border-radius:10px;padding:9px 13px;min-height:38px;font-family:'Manrope',sans-serif;font-size:12px;font-weight:700;white-space:nowrap;flex:0 0 auto;}
-  .tab-btn.active{color:#202123;background:#ECECED;border:0;}
-  .tab-btn:hover{background:#F3F3F4;color:#202123;}
-
-  main{max-width:1080px;margin:0 auto;padding:24px calc(16px + var(--sa-right)) calc(34px + var(--sa-bottom)) calc(16px + var(--sa-left));}
-  .section-kicker{font-size:10px;font-weight:800;letter-spacing:.13em;color:#0B8F70;margin-bottom:7px;}
-  .section-title{font-family:'Manrope',sans-serif;font-weight:800;font-size:28px;letter-spacing:-.055em;line-height:1.1;margin:0 0 8px;color:#202123;}
-  .section-sub{font-size:13px;line-height:1.65;color:#70737A;margin:0 0 18px;max-width:760px;}
-  .section-lead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;color:#70737A;margin:0 0 17px;}
-  .cycle-pill{display:inline-flex;padding:6px 9px;border:1px solid #E1E1E3;background:#F3F3F4;border-radius:999px;color:#60636A;font-family:'DM Mono',monospace;font-size:10px;}
-
-  .panel{background:#fff;border:1px solid #E5E5E7;border-radius:18px;box-shadow:var(--shadow);padding:18px;margin-bottom:16px;}
-  .panel h3{font-family:'Manrope',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.025em;margin:0 0 7px;color:#202123;}
-  .panel .hint{font-size:12px;line-height:1.65;color:#777A80;margin:0 0 14px;}
-
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px;margin-bottom:16px;}
-  .card{background:#fff;border:1px solid #E5E5E7;border-radius:17px;padding:14px;box-shadow:var(--shadow);position:relative;overflow:hidden;min-height:108px;display:flex;flex-direction:column;justify-content:space-between;}
-  .card::before{display:none!important;}
-  .card.jade{background:#F4FBF8;border-color:#DCEFE8;}.card.rust{background:#FFF7F7;border-color:#F0DEDE;}.card.brass{background:#F7F7F8;border-color:#E5E5E7;}
-  .card-label{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#787B81;line-height:1.35;margin-bottom:10px;}
-  .card-value{font-size:18px;font-weight:500;line-height:1.18;color:#202123;}.card-value.jade{color:#0B8F70;}.card-value.rust{color:#C74343;}
-  .card-sub{font-size:10px;color:#94969C;margin-top:7px;}
-
-  .banner{border:1px solid transparent;border-radius:16px;padding:13px 15px;font-size:12.5px;line-height:1.55;margin-bottom:15px;display:flex;gap:8px;align-items:flex-start;box-shadow:none;}
-  .banner.ok{background:#EFF9F5;border-color:#D7EEE6;color:#176B55;}.banner.warn{background:#FFF4F4;border-color:#F0DADA;color:#A33E3E;}.banner.info{background:#F3F3F4;border-color:#E5E5E7;color:#62666D;}.banner.setup{background:#F0F7F5;border-color:#D9EBE5;color:#2E6657;}
-
-  .summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-top:10px;}
-  .summary-chip{background:#FAFAFB;border:1px solid #E7E7E9;border-radius:14px;padding:11px 12px;font-size:10.5px;font-weight:700;color:#70737A;min-height:76px;display:flex;flex-direction:column;justify-content:space-between;}
-  .summary-chip b{display:block;font-size:15px;font-weight:500;color:#202123;margin-top:7px;}
-
-  .budget-summary{display:grid;grid-template-columns:1.3fr repeat(2,1fr);gap:9px;margin-bottom:12px;}
-  .budget-hero{grid-row:span 2;background:#fff;border:1.5px solid #10A37F;border-radius:18px;padding:18px;min-height:180px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden;box-shadow:var(--shadow);}
-  .budget-hero::after{content:'';position:absolute;width:130px;height:130px;right:-58px;top:-58px;border:24px solid rgba(16,163,127,.07);border-radius:50%;}
-  .budget-eyebrow{color:#60746D;font-size:9px;font-weight:800;letter-spacing:.12em;margin-bottom:auto;}.budget-hero b{color:#0B8F70;font-size:25px;font-weight:500;margin-bottom:8px;}.budget-hero small{font-size:10.5px;line-height:1.5;color:#777A80;max-width:250px;}
-  .budget-metric{background:#fff;border:1px solid #E6E6E8;border-radius:15px;min-height:85px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;}.budget-metric span{color:#777A80;font-size:9.5px;font-weight:800;}.budget-metric b{color:#202123;font-size:15px;font-weight:500;}.budget-metric.danger{background:#FFF7F7;border-color:#F0DEDE;}.budget-metric.danger b{color:#C74343;}
-  .explain-details{margin:0 0 16px;padding:1px 2px;color:#73767D;}.explain-details summary{cursor:pointer;font-size:10.5px;font-weight:800;color:#62666D;}.explain-details p{font-size:11.5px;line-height:1.6;max-width:760px;margin:8px 0 0;}
-
-  .month-nav{background:#fff!important;border:1px solid #E4E4E6!important;border-radius:17px!important;box-shadow:var(--shadow)!important;padding:7px!important;margin-bottom:15px!important;}
-  .month-nav-btn,.month-nav-today{background:#F3F3F4!important;border:0!important;color:#3F4247!important;border-radius:12px!important;}.month-pick-main{font-family:'Manrope',sans-serif!important;font-size:16px!important;font-weight:800!important;letter-spacing:-.035em!important;color:#202123!important;}.month-pick-sub{font-size:8.5px!important;letter-spacing:.11em!important;}.month-pick-cycle{font-family:'DM Mono',monospace!important;font-size:8.5px!important;color:#9A9CA2!important;}
-
-  .meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}.meta-grid .field-full{grid-column:1/-1;}.field label{display:block;font-size:10.5px;color:#666970;margin-bottom:5px;font-weight:700;}.field input,.field select{width:100%;height:44px;padding:0 12px;border:1px solid #DADADD;border-radius:12px;background:#fff;font-family:'Manrope',sans-serif;font-size:14px;color:#202123;box-sizing:border-box;}.field input:focus,.field select:focus{outline:none;border-color:#10A37F;box-shadow:0 0 0 3px rgba(16,163,127,.10);}
-
-  .settings-disclosure{padding:0;overflow:hidden;}
-  .settings-disclosure>summary{display:grid;grid-template-columns:34px minmax(0,1fr) 24px;align-items:center;gap:10px;min-height:82px;padding:15px 16px;cursor:pointer;list-style:none;}
-  .settings-disclosure>summary::-webkit-details-marker{display:none;}
-  .settings-summary-icon{width:34px;height:34px;border-radius:10px;background:#F1F1F2;display:flex;align-items:center;justify-content:center;font-size:16px;}
-  .settings-summary-copy{min-width:0;display:flex;flex-direction:column;gap:3px;}.settings-summary-copy b{font-size:14px;font-weight:800;color:#202123;}.settings-summary-copy small{font-size:10.5px;color:#92959B;font-weight:500;}
-  .settings-chevron{justify-self:end;align-self:center;width:10px;height:10px;border-right:2px solid #85898F;border-bottom:2px solid #85898F;transform:rotate(45deg);transform-origin:center;transition:transform .18s ease;}
-  .settings-disclosure[open] .settings-chevron{transform:rotate(225deg);}
-  .settings-content{border-top:1px solid #EFEFF1;padding:16px;}.setup-editor{padding:0;}.settings-warning{background:#F7F7F8;border:1px solid #E7E7E9;border-radius:13px;padding:11px 12px;margin-bottom:14px;display:flex;flex-direction:column;gap:3px;color:#666970;font-size:10.5px;line-height:1.5;}.settings-warning b{color:#3F4247;font-size:11px;}
-
-  .table-scroll{overflow-x:auto;background:#fff;border:1px solid #E6E6E8;border-radius:16px;box-shadow:none;}table{width:100%;border-collapse:collapse;font-size:12.5px;}thead th{background:#F7F7F8;color:#74777D;font-size:9px;font-weight:800;letter-spacing:.08em;padding:10px;}tbody td{padding:7px 9px;border-bottom:1px solid #EFEFF1;}tbody tr:hover{background:#FAFAFB;}
-  table input[type=text],table input[type=date],table input[type=number],table select{font-family:'Manrope',sans-serif;border-radius:9px;}
-  .pill{border-radius:999px;font-size:10px;padding:3px 8px;}.pill.ok{background:#EAF7F3;color:#0B8F70;}.pill.warn{background:#FCEEEE;color:#C74343;}
-
-  .btn{appearance:none;border:1px solid #DADADD;background:#fff;color:#202123;height:42px;padding:0 16px;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;}.btn:hover{background:#FAFAFB;border-color:#C9C9CC;color:#202123;}.btn.primary{background:#10A37F;border-color:#10A37F;color:#fff;}.btn.primary:hover{background:#0D8F70;border-color:#0D8F70;color:#fff;}.btn.danger{color:#C74343;border-color:#EBCFCF;}.btn.danger:hover{background:#FFF4F4;}
-  .file-input{width:100%;max-width:420px;color:#666970;font-family:'Manrope',sans-serif;font-size:12px;}.file-input::file-selector-button{border:0;background:#F1F1F2;color:#202123;border-radius:10px;padding:9px 12px;margin-right:10px;font:700 12px 'Manrope',sans-serif;cursor:pointer;}
-
-  .add-panel{padding:14px 16px;}.add-panel-head h3{font-family:'Manrope',sans-serif;font-size:14px;color:#202123;}.btn-toggle-add{background:#10A37F;width:32px;height:32px;box-shadow:none;}.btn-toggle-add:hover{background:#0D8F70;}.add-form-wrap .add-form{background:#F7F7F8;border-radius:12px;}.add-form input,.add-form select{background:#fff;border-color:#DADADD;border-radius:11px;font-family:'Manrope',sans-serif;font-size:13px;}.add-form button{background:#10A37F;border-radius:11px;font-size:13px;}.add-form button:hover{background:#0D8F70;}
-
-  .quickstats{gap:8px!important;}.qs{background:#fff!important;border:1px solid #E6E6E8!important;border-radius:14px!important;box-shadow:none!important;}.seg{background:#EFEFF1!important;border:0!important;border-radius:12px!important;padding:4px!important;}.seg button{border-radius:9px!important;font-weight:700!important;}.seg button.active{background:#fff!important;color:#202123!important;box-shadow:0 1px 5px rgba(0,0,0,.06)!important;}
-  .day-card{border-color:#E5E5E7!important;border-radius:15px!important;box-shadow:none!important;background:#fff!important;}.day-head{background:#fff!important;}.day-meter{background:#EEEEF0!important;}.day-meter i{background:#10A37F!important;}.txn-dot{background:#10A37F!important;}
-
-  .fab-add{background:#10A37F;color:#fff;box-shadow:0 10px 26px rgba(16,163,127,.22);}.fab-top{background:#fff;color:#777B82;border-color:#E1E1E3;box-shadow:0 3px 12px rgba(0,0,0,.06);}.quick-add-overlay{background:rgba(32,33,35,.28);}.quick-add-sheet{background:#fff;border-radius:24px 24px 0 0;}.quick-add-head h3{font-family:'Manrope',sans-serif;}.quick-add-field input,.quick-add-field select{font-family:'Manrope',sans-serif;background:#fff;border-color:#DADADD;}.quick-add-submit{background:#10A37F!important;}
-
-  footer{background:#F1F1F2;color:#8B8E94;border-top:1px solid #E4E4E6;padding:14px 16px calc(18px + var(--sa-bottom));font-size:10.5px;line-height:1.5;}
-  body[data-tab="data"] footer{display:none;}
-  body[data-tab="data"] main{padding-bottom:calc(24px + var(--sa-bottom));}
-
-  @media(max-width:700px){
-    header.masthead{padding-left:10px;padding-right:10px;}.masthead-inner{grid-template-columns:auto minmax(72px,1fr) auto;gap:7px;}.masthead-title{font-size:17px;}.masthead-meta{font-size:8.5px;padding:4px 7px;}.account-user{max-width:58px;font-size:9px;}.account-bar{gap:4px;}.account-bar button{font-size:9px;padding:5px 6px;}#syncStatus[data-state="saved"]{display:none;}#syncStatus{font-size:8px;min-height:20px;padding:2px 5px;}
-    .tabs-inner{padding:6px 7px;gap:3px;}.tab-btn{font-size:11px;padding:8px 11px;min-height:36px;}
-    main{padding:22px calc(12px + var(--sa-right)) calc(30px + var(--sa-bottom)) calc(12px + var(--sa-left));}.section-title{font-size:25px;}.section-sub{font-size:12px;}.section-kicker{font-size:9px;}
-    .cards{grid-template-columns:1fr 1fr;gap:8px;}.card{min-height:102px;border-radius:15px;padding:12px;}.card-label{font-size:8.5px;margin-bottom:8px;}.card-value{font-size:15px;}.card-sub{font-size:9px;}
-    .summary-row{grid-template-columns:1fr 1fr;gap:8px;}.summary-chip{min-height:72px;padding:10px;border-radius:13px;}.summary-chip b{font-size:14px;}
-    .budget-summary{grid-template-columns:1fr 1fr;}.budget-hero{grid-column:1/-1;grid-row:auto;min-height:142px;border-radius:16px;padding:15px;}.budget-hero b{font-size:22px;}.budget-metric{min-height:78px;padding:11px;border-radius:14px;}.budget-metric b{font-size:14px;}
-    .panel{border-radius:16px;padding:15px;}.settings-disclosure{padding:0;}.settings-disclosure>summary{min-height:76px;padding:13px 14px;grid-template-columns:32px minmax(0,1fr) 22px;}.settings-summary-icon{width:32px;height:32px;}.settings-summary-copy b{font-size:13px;}.settings-summary-copy small{font-size:9.5px;}.settings-content{padding:14px;}.meta-grid{grid-template-columns:1fr 1fr;gap:10px;}.field input,.field select{font-size:16px;height:44px;}
-    .fab-add{width:54px;height:54px;right:calc(15px + var(--sa-right));bottom:calc(17px + var(--sa-bottom));}.fab-top{left:calc(13px + var(--sa-left));}
-    footer{display:none;}
-  }
-  @media(max-width:380px){.masthead-meta{display:none;}.masthead-inner{grid-template-columns:1fr auto;}.cards{grid-template-columns:1fr 1fr;}.meta-grid{grid-template-columns:1fr;}.meta-grid .field-full{grid-column:auto;}}
 
 </style>
 </head>
@@ -856,16 +728,13 @@
     <p class="auth-error" id="authError"></p>
   </div>
 </div>
-
 <header class="masthead">
   <div class="masthead-inner">
-    <div class="masthead-title">Sổ <span>Chi Tiêu</span></div>
-    <div class="masthead-meta" id="mastheadMeta"></div>
-    <div class="account-bar" id="accountBar">
-      <span class="account-user" id="accountName"></span>
-      <span id="syncStatus" data-state="saved">☁ Đã lưu</span>
-      <button id="logoutBtn" type="button">Thoát</button>
+    <div class="masthead-top">
+      <div class="masthead-title">Sổ <span>Chi Tiêu</span></div>
+      <div class="account-bar" id="accountBar"><span id="accountName"></span><button id="logoutBtn" type="button">Thoát</button></div>
     </div>
+    <div class="masthead-meta" id="mastheadMeta"></div>
   </div>
 </header>
 
@@ -1422,19 +1291,18 @@ function computeTCCNForMonth(viewThang, viewNam){
    RENDER: layout shell
    ========================================================== */
 function renderMasthead(){
-  const el=document.getElementById('mastheadMeta');
-  const a=cycleStartFor(state.meta.thang,state.meta.nam);
-  const b=cycleEndFor(state.meta.thang,state.meta.nam);
-  const dm=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
-  el.innerHTML=`<span title="Chu kỳ ${cycleLabel(state.meta.thang,state.meta.nam)}">${dm(a)} → ${dm(b)}</span>`;
+  const el = document.getElementById('mastheadMeta');
+  const start=cycleStartFor(state.meta.thang,state.meta.nam);
+  const end=cycleEndFor(state.meta.thang,state.meta.nam);
+  const dm=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+  const ghiNhan=state.meta.ghiNhanNgay ? state.meta.ghiNhanNgay.split('-').reverse().join('/') : '—';
+  el.innerHTML = `
+    <span class="mh-desktop">Chu kỳ hiện tại <b>${state.meta.thang}/${state.meta.nam}</b> (${cycleLabel(state.meta.thang,state.meta.nam)}) · Ghi nhận ngày <b>${ghiNhan}</b></span>
+    <span class="mh-mobile">CK <b>${state.meta.thang}/${state.meta.nam}</b> · ${dm(start)}→${dm(end)}</span>`;
 }
 function renderTabs(){
   const el = document.getElementById('tabsInner');
   el.innerHTML = TABS.map(t=>`<button class="tab-btn ${state.ui.currentTab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
-  requestAnimationFrame(()=>{
-    const active=el.querySelector('.tab-btn.active');
-    if(active) active.scrollIntoView({behavior:'auto',block:'nearest',inline:'center'});
-  });
 }
 /* keepScroll: giữ nguyên vị trí cuộn sau khi vẽ lại. Khi bấm mũi tên đổi tháng mà trang
    nhảy vọt về đầu, người dùng tưởng nút không ăn và bấm thêm lần nữa — chính là cách cũ
@@ -1444,9 +1312,6 @@ function renderAll(opts){
   const y = keepScroll ? window.scrollY : 0;
   renderMasthead();
   renderTabs();
-  document.body.dataset.tab = state.ui.currentTab;
-  const fab = document.getElementById('fabAdd');
-  if(fab) fab.hidden = (state.ui.currentTab === 'data');
   const app = document.getElementById('app');
   switch(state.ui.currentTab){
     case 'tccn': app.innerHTML = viewTCCN(); break;
@@ -1466,8 +1331,9 @@ function renderAll(opts){
    ========================================================== */
 function viewSetupPanel(highlight){
   return `
-  <div class="setup-editor" id="setupPanel">
-    <div class="settings-warning"><b>Chỉ thay đổi khi bạn muốn đổi mốc ban đầu.</b><span>Đây không phải số dư ngân hàng hiện tại. Sửa các số này sẽ ảnh hưởng số dư được tính trên toàn bộ sổ.</span></div>
+  <div class="panel" id="setupPanel">
+    <h3>Cài đặt số dư ban đầu</h3>
+    <p class="hint"><b>Chỉ sửa khi bạn thật sự muốn đổi mốc ban đầu.</b> TPBank và tiền mặt ở đây là số tiền lúc bắt đầu dùng sổ, không phải số dư ngân hàng hiện tại. Thay đổi hai số này sẽ làm thay đổi số dư được tính trên toàn bộ sổ.</p>
     <div class="meta-grid">
       <div class="field">
         <label>Chu kỳ hiện tại (tháng bắt đầu)</label>
@@ -1480,15 +1346,15 @@ function viewSetupPanel(highlight){
         <input type="number" data-meta="nam" data-type="number" value="${state.meta.nam}">
       </div>
       <div class="field">
-        <label>Ngày bắt đầu ghi nhận</label>
+        <label>Ghi nhận ngày</label>
         <input type="date" data-meta="ghiNhanNgay" data-type="text" value="${state.meta.ghiNhanNgay||''}">
       </div>
       <div class="field">
-        <label>Số dư TPBank ban đầu</label>
+        <label>Số dư TPBank (ban đầu)</label>
         <input type="text" inputmode="numeric" data-meta="tpbank" data-type="money" value="${formatNumberPlain(state.meta.tpbank)}">
       </div>
       <div class="field field-full">
-        <label>Tiền mặt ban đầu</label>
+        <label>Tiền mặt (ban đầu)</label>
         <input type="text" inputmode="numeric" data-meta="tienMat" data-type="money" value="${formatNumberPlain(state.meta.tienMat)}">
       </div>
     </div>
@@ -1505,7 +1371,7 @@ function viewTCCN(){
   const firstSetup = isFirstSetup();
 
   const setupBanner = firstSetup ? `
-  <div class="banner setup">👋 <div><b>Cần thiết lập lần đầu:</b> vào <b>Dữ liệu → Cài đặt số dư ban đầu</b>. Tổng quan sẽ luôn giữ sạch, không hiển thị các ô cài đặt này.</div></div>
+  <div class="banner setup">👋 <div><b>Cần thiết lập lần đầu:</b> vào tab <b>Dữ liệu</b> → <b>Cài đặt số dư ban đầu</b>. Sau khi thiết lập, số dư ban đầu sẽ không xuất hiện trên Tổng quan nữa.</div></div>
   ` : '';
 
   const monthNav = renderMonthNav('tccn', viewThang, viewNam, rel);
@@ -1533,7 +1399,7 @@ function viewTCCN(){
   const ngsLabel = rel===0 ? 'Ngân sách còn cần dùng' : (rel<0 ? 'Ngân sách còn thiếu (nếu có)' : 'Ngân sách cần dùng');
   const daChiChip = (rel<=0) ? `
     <div class="card ${coVuotNganSach?'rust':'brass'}">
-      <div class="card-label">Đã chi / Kế hoạch chu kỳ ${viewThang}/${viewNam}</div>
+      <div class="card-label">Đã chi / Ngân sách chu kỳ ${viewThang}/${viewNam}</div>
       <div class="card-value ${coVuotNganSach?'rust':''}">${fmt(t.bbSumXem.sumDaChi)} / ${fmt(t.bbSumXem.soTienTrongThangCan)}</div>
     </div>` : '';
 
@@ -1544,7 +1410,7 @@ function viewTCCN(){
       <div class="card-value jade">${fmt(t.soDuHienTai)}</div>
     </div>
     <div class="card brass">
-      <div class="card-label">Số dư gồm cả chờ thu</div>
+      <div class="card-label">Số dư đầy đủ (đã cộng cả khoản đang Chờ thu)</div>
       <div class="card-value">${fmt(t.soDuDayDu)}</div>
     </div>
     ${daChiChip}
@@ -1553,7 +1419,7 @@ function viewTCCN(){
       <div class="card-value">${fmt(t.duNoThangXem)}</div>
     </div>
     <div class="card rust">
-      <div class="card-label">Vay chưa trả</div>
+      <div class="card-label">Khoản vay chưa trả (cần trả ngay)</div>
       <div class="card-value">${fmt(t.duNoVAY)}</div>
     </div>
     <div class="card brass">
@@ -1562,7 +1428,7 @@ function viewTCCN(){
       ${rel===0 ? `<div class="card-sub">Còn ${daysRemainingInCycle()} ngày (đến ${cycleEndDate().getDate()}/${cycleEndDate().getMonth()+1})</div>` : ''}
     </div>
     <div class="card jade">
-      <div class="card-label">Tổng cần chu kỳ này</div>
+      <div class="card-label">Tổng cần cho tháng ${viewThang}/${viewNam} (đã gồm khoản vay)</div>
       <div class="card-value jade">${fmt(t.tongCanThangXem)}</div>
     </div>
     <div class="card ${thieuHutDuKien?'rust':'jade'}">
@@ -1576,7 +1442,7 @@ function viewTCCN(){
       <div class="card-value jade">${fmt(t.soDuHienTai)}</div>
     </div>
     <div class="card brass">
-      <div class="card-label">Số dư gồm cả chờ thu</div>
+      <div class="card-label">Số dư đầy đủ (đã cộng cả khoản đang Chờ thu)</div>
       <div class="card-value">${fmt(t.soDuDayDu)}</div>
     </div>
     <div class="card rust">
@@ -1584,7 +1450,7 @@ function viewTCCN(){
       <div class="card-value">${fmt(t.duNoThangXem)}</div>
     </div>
     <div class="card rust">
-      <div class="card-label">Vay chưa trả</div>
+      <div class="card-label">Khoản vay chưa trả (cần trả ngay)</div>
       <div class="card-value">${fmt(t.duNoVAY)}</div>
     </div>
     <div class="card brass">
@@ -1596,19 +1462,21 @@ function viewTCCN(){
       <div class="card-value">${fmt(t.tongCanLuyKe)}</div>
     </div>
     <div class="card ${thieuHutDuKien?'rust':'jade'}">
-      <div class="card-label">Dự kiến dư / thiếu đến hết chu kỳ</div>
+      <div class="card-label">Dự kiến dư/thiếu đến hết tháng ${viewThang}/${viewNam}</div>
       <div class="card-value ${thieuHutDuKien?'rust':'jade'}">${fmt(t.buTruDuKien)}</div>
     </div>
   </div>`;
 
+  const setupPanel = viewSetupPanel(firstSetup);
+
   const summaryChips = `
   <div class="panel">
-    <h3 style="margin-bottom:14px;">Cần xử lý</h3>
+    <h3 style="margin-bottom:14px;">Đang chờ xử lý (hôm nay)</h3>
     <div class="summary-row">
-      <div class="summary-chip">Cho vay chưa thu<b>${fmt(t.chovayOutstanding)}</b></div>
-      <div class="summary-chip">Chờ thu về<b>${fmt(t.chotraOutstanding)}</b></div>
-      <div class="summary-chip">Dư nợ đến hạn<b>${fmt(t.duNoThangXem)}</b></div>
-      <div class="summary-chip">Vay chưa trả<b>${fmt(t.duNoVAY)}</b></div>
+      <div class="summary-chip">Đang cho vay chưa thu<b>${fmt(t.chovayOutstanding)}</b></div>
+      <div class="summary-chip">Đang chờ thu về<b>${fmt(t.chotraOutstanding)}</b></div>
+      <div class="summary-chip">Dư nợ trả góp đến hạn tháng ${viewThang}/${viewNam}<b>${fmt(t.duNoThangXem)}</b></div>
+      <div class="summary-chip">Khoản vay chưa trả (không theo tháng)<b>${fmt(t.duNoVAY)}</b></div>
     </div>
   </div>`;
 
@@ -1655,22 +1523,21 @@ function viewTCCN(){
       </table>
     </div>
     <div class="summary-row">
-      <div class="summary-chip">Ngân sách cộng dồn<b>${fmt(t.cumNganSach)}</b></div>
-      <div class="summary-chip">Dư nợ cộng dồn<b>${fmt(t.cumDuNo)}</b></div>
-      <div class="summary-chip">Vay chưa trả<b>${fmt(t.duNoVAY)}</b></div>
-      <div class="summary-chip">Tổng cần chuẩn bị<b>${fmt(t.tongCanLuyKe)}</b></div>
+      <div class="summary-chip">Tổng ngân sách cộng dồn<b>${fmt(t.cumNganSach)}</b></div>
+      <div class="summary-chip">Tổng dư nợ trả góp cộng dồn<b>${fmt(t.cumDuNo)}</b></div>
+      <div class="summary-chip">Khoản vay chưa trả (cộng thêm luôn, không theo tháng)<b>${fmt(t.duNoVAY)}</b></div>
+      <div class="summary-chip">Cần chuẩn bị tổng cộng (đã gồm khoản vay)<b>${fmt(t.tongCanLuyKe)}</b></div>
     </div>
   </div>` : '';
 
   const header = `
-  <div class="section-kicker">TÌNH HÌNH TÀI CHÍNH</div>
   <div class="section-title">Tổng quan</div>
   <p class="section-sub">Bức tranh tài chính tổng hợp — dùng nút ‹ › để xem trước ngân sách và nợ đến hạn của các tháng tương lai, giúp tính ra cần tiết kiệm bao nhiêu mới đủ trả nợ.</p>`;
 
   if(firstSetup){
-    return header + monthNav + setupBanner + cardsBlock + summaryChips;
+    return header + monthNav + setupBanner + setupPanel + cardsBlock + summaryChips;
   }
-  return header + monthNav + statusBanner + vuotBanner + cardsBlock + hangMucVuotDetail + projectionDetail + summaryChips;
+  return header + monthNav + statusBanner + vuotBanner + cardsBlock + hangMucVuotDetail + projectionDetail + setupPanel + summaryChips;
 }
 
 /* ==========================================================
@@ -2101,8 +1968,7 @@ function viewCT(){
     </form>`;
 
   return `
-  <div class="section-kicker">DÒNG TIỀN HẰNG NGÀY</div>
-  <div class="section-title">Chi tiêu</div>
+  <div class="section-title">Chi tiêu chi tiết</div>
   <p class="section-sub">Chạm vào một khoản bất kỳ để sửa hoặc xoá. Chạm vào tên tháng để nhảy thẳng tới tháng cần xem.</p>
 
   ${seg}
@@ -2162,29 +2028,19 @@ function viewBB(){
     </form>`;
 
   return `
-  <div class="section-kicker">KẾ HOẠCH CHI TIÊU</div>
-  <div class="section-title">Ngân sách</div>
-  <div class="section-lead">
-    <span>Theo dõi kế hoạch, số đã chi và phần còn lại trong chu kỳ.</span>
-    <span class="cycle-pill">${cycleLabel(state.meta.thang,state.meta.nam)}</span>
-  </div>
+  <div class="section-title">Ngân sách theo hạng mục · Chu kỳ ${state.meta.thang}/${state.meta.nam}</div>
+  <p class="section-sub" style="margin-top:-4px"><b>${cycleLabel(state.meta.thang,state.meta.nam)}</b></p>
+  <p class="section-sub">Đơn giá × số buổi dự kiến trong tháng = ngân sách. "Ngày làm việc còn lại" tự đếm số ngày trong tuần (T2–T6) từ hôm nay đến hết chu kỳ 11→10. "Không giới hạn" dùng cho hạng mục không đặt trước số buổi (VD: đi chơi) — nhập thẳng <b>tổng ngân sách</b> vào ô "Đơn giá", chi vượt số đó vẫn báo Vượt như bình thường.</p>
 
-  <div class="budget-summary" id="bbSummaryRow">
-    <div class="budget-hero">
-      <span class="budget-eyebrow">CÒN CẦN CHUẨN BỊ</span>
-      <b id="bbSumCan">${fmt(sum.soTienCan)}</b>
-      <small>Phần kế hoạch còn lại sau các khoản đã chi.</small>
-    </div>
-    <div class="budget-metric"><span>Đã chi</span><b id="bbSumDaDung">${fmt(sum.soTienDaDung)}</b></div>
-    <div class="budget-metric"><span>Kế hoạch chu kỳ</span><b id="bbSumTrongThangCan">${fmt(sum.soTienTrongThangCan)}</b></div>
-    <div class="budget-metric"><span>Ngân sách cần dùng</span><b id="bbSumThucTeCanSuDung">${fmt(sum.soTienThucTeCanSuDung)}</b></div>
-    <div class="budget-metric ${sum.vuotQua>0?'danger':''}"><span>Vượt ngân sách</span><b id="bbSumVuotQua">${fmt(sum.vuotQua)}</b></div>
+  <div class="priority-summary">
+  <div class="summary-row" id="bbSummaryRow">
+    <div class="summary-chip">Số tiền đã dùng<b id="bbSumDaDung">${fmt(sum.soTienDaDung)}</b></div>
+    <div class="summary-chip">Số tiền trong tháng cần<b id="bbSumTrongThangCan">${fmt(sum.soTienTrongThangCan)}</b></div>
+    <div class="summary-chip">Số tiền thực tế cần sử dụng<b id="bbSumThucTeCanSuDung">${fmt(sum.soTienThucTeCanSuDung)}</b></div>
+    <div class="summary-chip">Số tiền vượt quá<b id="bbSumVuotQua" style="color:${sum.vuotQua>0?'#EF4444':'inherit'}">${fmt(sum.vuotQua)}</b></div>
+    <div class="summary-chip">Số tiền cần<b id="bbSumCan">${fmt(sum.soTienCan)}</b></div>
   </div>
-
-  <details class="explain-details">
-    <summary>Cách tính ngân sách</summary>
-    <p>Đơn giá × số buổi dự kiến = ngân sách. “Ngày làm việc còn lại” tự đếm T2–T6 đến hết chu kỳ 11→10. Với “Không giới hạn”, số ở ô Đơn giá được dùng như tổng ngân sách của hạng mục.</p>
-  </details>
+  </div>
 
   ${wrapAddForm('bb', 'Thêm hạng mục', addForm)}
 
@@ -2533,15 +2389,16 @@ function viewVay(){
 function viewData(){
   return `
   <div class="section-title">Dữ liệu</div>
-  <p class="section-sub">Dữ liệu nghiệp vụ đang lưu trên Supabase. Các thiết lập ít dùng — gồm số dư ban đầu — được giấu tại đây để không làm rối Tổng quan.</p>
+  <p class="section-sub">Dữ liệu nghiệp vụ đang lưu trên Supabase và có thể dùng lại trên thiết bị khác. JSON bên dưới là bản sao lưu thủ công bổ sung.</p>
 
-  <details class="panel settings-disclosure" id="initialBalanceSettings" ${isFirstSetup()?'open':''}>
-    <summary>
-      <span class="settings-summary-icon">⚙</span>
-      <span class="settings-summary-copy"><b>Cài đặt số dư ban đầu</b><small>Chỉ mở khi cần thay đổi mốc tính toán</small></span>
-      <span class="settings-chevron" aria-hidden="true"></span>
+  <details class="panel" id="initialBalanceSettings" ${isFirstSetup()?'open':''}>
+    <summary style="cursor:pointer;font-weight:800;list-style-position:outside">
+      ⚙ Cài đặt số dư ban đầu
+      <span style="display:block;font-size:11px;font-weight:500;color:var(--ink-faint);margin-top:4px">Không cần mở trong sử dụng hằng ngày</span>
     </summary>
-    <div class="settings-content">${viewSetupPanel(false)}</div>
+    <div style="margin-top:14px">
+      ${viewSetupPanel(false)}
+    </div>
   </details>
 
 
@@ -2554,7 +2411,7 @@ function viewData(){
   <div class="panel">
     <h3 style="margin-bottom:14px;">Khôi phục</h3>
     <p class="hint">Chọn file JSON đã tải xuống trước đó để khôi phục — sẽ ghi đè toàn bộ dữ liệu hiện tại.</p>
-    <input class="file-input" type="file" id="fileImport" accept="application/json">
+    <input type="file" id="fileImport" accept="application/json">
   </div>
 
   <div class="panel">
@@ -2770,15 +2627,6 @@ function pickMonth(scope, value){
 /* ==========================================================
    EVENT DELEGATION
    ========================================================== */
-document.addEventListener('toggle', e=>{
-  if(e.target && e.target.id==='initialBalanceSettings'){
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      const max=Math.max(0, document.documentElement.scrollHeight-window.innerHeight);
-      if(window.scrollY>max) window.scrollTo({top:max,left:0,behavior:'auto'});
-    }));
-  }
-}, true);
-
 document.addEventListener('click', e=>{
   // Sửa lỗi trên iOS: khi đang gõ dở một ô input/select rồi chạm thẳng vào nút khác
   // (VD: đổi tab), Safari/Chrome trên iPhone đôi khi KHÔNG kịp bắn sự kiện 'change'
