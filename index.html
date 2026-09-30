@@ -925,6 +925,165 @@
     .page-head #syncStatus{font-size:10px; min-height:26px; padding:4px 8px;}
   }
 
+
+  /* ==========================================================
+     UX v7 — PHONE FIRST
+     ========================================================== */
+  .mobile-only{display:none!important;}
+  .desktop-only{display:block;}
+  .mobile-label{display:none;}
+  .fab-add.hidden{display:none!important;}
+
+  @media (max-width:700px){
+    :root{--mobile-pad:14px;--mobile-radius:14px;}
+    body{background:#F6F7FB;-webkit-tap-highlight-color:transparent;}
+    header.masthead{padding:calc(7px + var(--sa-top)) var(--mobile-pad) 7px;}
+    .masthead-inner{gap:0;}
+    .masthead-title{font-size:17px;}
+    .masthead-meta{display:none;}
+    .account-bar span{max-width:108px;}
+    .account-bar button{min-height:32px;padding:4px 9px;}
+
+    .tabs{top:0;box-shadow:0 1px 0 rgba(30,42,60,.08);}
+    .tabs-inner{gap:2px;padding:0 12px;scroll-padding-inline:12px;background:rgba(255,255,255,.97);}
+    .tab-btn{min-height:46px;padding:0 12px;font-size:12.5px;border-bottom-width:2px;}
+
+    main{padding:14px var(--mobile-pad) calc(108px + var(--sa-bottom));}
+    footer{display:none;}
+    .desktop-only{display:none!important;}
+    .mobile-only{display:block!important;}
+    .desktop-label{display:none;}
+    .mobile-label{display:inline;}
+
+    .section-title{font-family:'Inter',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.025em;margin-bottom:4px;}
+    .section-sub{font-size:12.5px;line-height:1.45;margin-bottom:13px;}
+    .mobile-compact-help{color:#697386;max-width:100%;}
+
+    .panel,.chart-panel,.month-nav,.add-panel,.settings-card,.data-action-card,.card,.day-card,.m-record,.budget-m-card{
+      border-radius:var(--mobile-radius);box-shadow:0 1px 2px rgba(30,42,60,.04),0 6px 18px rgba(30,42,60,.045);
+    }
+
+    .month-nav{margin-bottom:12px;padding:5px 6px;grid-template-columns:40px minmax(0,1fr) 40px auto;}
+    .month-nav-btn,.month-nav-today{width:40px;height:40px;min-width:40px;}
+    .month-pick-main{font-size:16px;}
+    .month-pick-sub{font-size:9px;}
+    .month-pick-cycle{font-size:9.5px;margin-top:1px;}
+
+    .banner{font-size:12.5px;line-height:1.45;padding:11px 12px;margin-bottom:12px;border-radius:12px;}
+    .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px;}
+    .card{min-height:90px;padding:11px 12px;border-radius:13px;}
+    .card.wide,.offset-card{grid-column:1 / -1;}
+    .card-label{min-height:0;font-size:9.5px;line-height:1.3;margin-bottom:8px;letter-spacing:.035em;}
+    .card-value{margin-top:auto;font-size:clamp(15px,4.5vw,19px);line-height:1.18;overflow-wrap:normal;white-space:nowrap;}
+    .card.wide .card-value{font-size:clamp(17px,5vw,21px);}
+    .card-sub{font-size:10.5px;margin-top:5px;}
+    .offset-card{min-height:82px;background:linear-gradient(135deg,#FFFFFF 0%,#F8FFFB 100%);}
+    .offset-card .card-value{font-size:22px;}
+    .pending-panel{padding:13px;margin-top:2px;}
+    .pending-panel h3{font-family:'Inter',sans-serif;font-size:12px;font-weight:700;margin:0 0 8px!important;color:var(--ink-soft);}
+
+    .priority-summary{margin-bottom:12px;}
+    .summary-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
+    .summary-chip{padding:10px 11px;border-radius:12px;font-size:10.5px;line-height:1.3;background:#fff;}
+    .summary-chip b{font-size:14px;margin-top:4px;}
+    .single-summary{grid-template-columns:1fr;}
+    .budget-summary-wide{grid-column:1 / -1;}
+
+    .add-panel{padding:12px 13px;margin-bottom:12px;border-radius:14px;}
+    .add-panel-head h3{font-family:'Inter',sans-serif;font-size:15px;font-weight:750;color:var(--ink);}
+    .btn-toggle-add{width:36px;height:36px;box-shadow:0 3px 10px rgba(79,70,229,.18);}
+    .add-form-wrap.open{margin-top:10px;}
+    .add-form{gap:8px;padding:10px;}
+    .add-form input,.add-form select,.add-form button{min-height:44px;border-radius:10px;font-size:16px;}
+    .add-form input[style]{max-width:none!important;flex:1 1 28%;}
+
+    .mobile-record-list{display:flex!important;flex-direction:column;gap:9px;margin-top:2px;}
+    .m-record{background:#fff;border:1px solid #E8ECF3;padding:12px;transition:opacity .15s,border-color .15s;}
+    .m-record.is-done{opacity:.64;}
+    .m-record-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(105px,38%);gap:10px;align-items:center;}
+    .m-record-title,.m-record-amount,.m-record-note{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);padding:3px 1px;border-radius:0;box-shadow:none;-webkit-appearance:none;appearance:none;}
+    .m-record-title{font-family:'Inter',sans-serif;font-size:16px!important;font-weight:700;text-align:left;overflow:hidden;text-overflow:ellipsis;}
+    .m-record-amount{font-family:'IBM Plex Mono',monospace;font-size:16px!important;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;}
+    .m-record-note{font-family:'Inter',sans-serif;font-size:16px!important;color:var(--ink-soft);margin-top:5px;border-top:1px solid transparent;}
+    .m-record-note::placeholder{color:#A4ACBA;}
+    .m-record-title:focus,.m-record-amount:focus,.m-record-note:focus{background:#F7F8FC;border-radius:7px;padding-left:6px;padding-right:6px;}
+    .m-record-actions{display:flex;align-items:center;gap:7px;margin-top:9px;padding-top:9px;border-top:1px solid #EEF1F5;}
+    .m-date-picker{position:relative;display:inline-flex;align-items:center;min-height:34px;padding:0 9px;border:1px solid #E4E8EF;border-radius:9px;background:#FAFBFD;color:#697386;font-size:11.5px;font-weight:650;white-space:nowrap;overflow:hidden;}
+    .m-date-picker input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}
+    .m-check{min-height:34px;padding:0 9px;border:1px solid #E4E8EF;border-radius:9px;display:inline-flex;align-items:center;gap:6px;color:#697386;font-size:11px;font-weight:650;background:#fff;white-space:nowrap;}
+    .m-check.on{color:#08703F;border-color:#A9E8C7;background:#EFFBF4;}
+    .m-check input{width:17px;height:17px;margin:0;accent-color:#0EA968;}
+    .m-delete{width:34px;height:34px;margin-left:auto;flex:0 0 34px;border:0;border-radius:9px;background:transparent;color:#A4ACBA;font-size:17px;}
+    .m-delete:active{background:#FDEBEC;color:var(--rust);}
+    .mobile-empty{padding:22px 16px;text-align:center;color:var(--ink-soft);background:#fff;border:1px dashed #DDE2EA;border-radius:14px;font-size:12px;}
+
+    .budget-mobile-list{gap:10px;}
+    .budget-m-card{background:#fff;border:1px solid #E8ECF3;padding:12px;}
+    .budget-m-card.is-over{border-color:#F0C5C1;}
+    .budget-m-head{display:flex;align-items:center;gap:9px;}
+    .m-title-input{min-width:0;flex:1 1 auto;border:0;outline:0;background:transparent;font-family:'Inter',sans-serif;font-size:16px!important;font-weight:750;color:var(--ink);padding:3px 1px;}
+    .m-title-input:focus{background:#F7F8FC;border-radius:7px;padding:5px 7px;}
+    .budget-m-balance{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:9px;font-size:10.5px;color:var(--ink-soft);}
+    .budget-m-balance b{font-family:'IBM Plex Mono',monospace;font-size:16px;font-variant-numeric:tabular-nums;}
+    .budget-m-progress{height:6px;margin-top:7px;background:#EEF1F7;border-radius:999px;overflow:hidden;}
+    .budget-m-progress i{display:block;height:100%;background:linear-gradient(90deg,#4F46E5,#16A3E5);border-radius:inherit;}
+    .budget-m-card.is-over .budget-m-progress i{background:#EF4444;}
+    .budget-m-caption{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:7px;color:#7A8496;font-size:10.5px;}
+    .budget-m-caption b{color:var(--ink-soft);font-weight:650;}
+    .budget-m-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 78px 34px;gap:6px;align-items:end;margin-top:11px;padding-top:10px;border-top:1px solid #EEF1F5;}
+    .m-mini-field{min-width:0;}
+    .m-mini-field>span:first-child{display:block;margin-bottom:4px;font-size:9px;font-weight:700;color:#8892A3;text-transform:uppercase;letter-spacing:.035em;}
+    .m-mini-field input,.m-mini-field select,.m-readonly{width:100%;height:34px;min-width:0;border:1px solid #E4E8EF;border-radius:8px;background:#FAFBFD;padding:0 7px;color:var(--ink);font-size:16px!important;font-family:'Inter',sans-serif;box-sizing:border-box;}
+    .m-mini-field input{font-family:'IBM Plex Mono',monospace;}
+    .m-readonly{display:flex;align-items:center;justify-content:center;color:#697386;}
+
+    .debt-summary .card{grid-column:1 / -1;min-height:76px;}
+    .mobile-chart-details{margin:0 0 10px;border:1px solid #E4E8EF;background:#fff;border-radius:12px;overflow:hidden;}
+    .mobile-chart-details>summary{min-height:42px;padding:0 12px;display:flex;align-items:center;cursor:pointer;list-style:none;font-size:12px;font-weight:700;color:#5D6675;}
+    .mobile-chart-details>summary::-webkit-details-marker{display:none;}
+    .mobile-chart-details>summary::after{content:'⌄';margin-left:auto;font-size:16px;color:#9AA3B2;}
+    .mobile-chart-details[open]>summary::after{transform:rotate(180deg);}
+    .mobile-chart-inner{padding:0 8px 8px;}
+    .mobile-chart-inner .chart-panel{margin:0;border:0;box-shadow:none;padding:10px 4px;}
+    .mobile-lookup{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(120px,.85fr);gap:8px;align-items:stretch;margin-bottom:10px;}
+    .mobile-lookup>label,.mobile-lookup>div{background:#fff;border:1px solid #E4E8EF;border-radius:12px;padding:9px 10px;min-width:0;}
+    .mobile-lookup span{display:block;font-size:9.5px;font-weight:700;color:#7A8496;text-transform:uppercase;letter-spacing:.035em;margin-bottom:4px;}
+    .mobile-lookup input{width:100%;height:26px;border:0;padding:0;background:transparent;font-size:16px!important;color:var(--ink);}
+    .mobile-lookup b{display:block;font-family:'IBM Plex Mono',monospace;font-size:14px;white-space:nowrap;}
+
+    .quickstats{gap:6px;margin-bottom:10px;}
+    .qs{padding:8px 5px;border-radius:11px;min-height:54px;}
+    .qs-label{font-size:8.5px;letter-spacing:.035em;}
+    .qs-value{font-size:12.5px;}
+    .list-toolbar{position:static;padding:4px;gap:5px;margin:8px 0 12px;background:#EEF1F7;border-color:#E2E6EE;box-shadow:none;}
+    .list-toolbar .btn{min-height:38px;border:0;border-radius:9px;background:#fff;font-size:12px;}
+    .day-card{margin-bottom:8px;}
+    .day-head{min-height:70px;padding:8px 10px;}
+    .day-dd{font-size:22px;}
+    .day-count{font-size:11.5px;}
+    .day-total{font-size:14px;}
+    .txn{min-height:48px;}
+
+    .fab-add{width:50px;height:50px;right:calc(14px + var(--sa-right));bottom:calc(16px + var(--sa-bottom));font-size:23px;box-shadow:0 6px 18px rgba(79,70,229,.28);}
+    .fab-top{width:38px;height:38px;left:calc(12px + var(--sa-left));bottom:calc(18px + var(--sa-bottom));}
+    #undoToast{bottom:calc(78px + var(--sa-bottom));}
+
+    .settings-summary-main small{font-size:10.5px;}
+    .data-action-card{border-radius:13px;}
+    .desktop-only table{display:table;}
+  }
+
+  @media (max-width:390px){
+    :root{--mobile-pad:11px;}
+    .tab-btn{padding:0 10px;font-size:12px;}
+    .cards{gap:7px;}
+    .card{padding:10px;}
+    .card-value{font-size:14.5px;}
+    .m-record-main{grid-template-columns:minmax(0,1fr) 105px;}
+    .budget-m-controls{grid-template-columns:1fr 1fr 64px 34px;}
+    .m-check{padding:0 7px;}
+  }
+
 </style>
 </head>
 <body>
@@ -1278,6 +1437,30 @@ function wrapAddForm(key, label, formHtml){
 /* ==========================================================
    HELPERS
    ========================================================== */
+
+function fmtDateShort(dateStr){
+  if(!dateStr) return 'Chưa có ngày';
+  const p=String(dateStr).split('-');
+  if(p.length!==3) return dateStr;
+  return `${p[2]}/${p[1]}/${p[0]}`;
+}
+function mobileIsoDatePicker(arr,id,field,value){
+  return `<label class="m-date-picker" title="Đổi ngày">
+    <span>${fmtDateShort(value)}</span>
+    <input type="date" data-array="${arr}" data-id="${id}" data-field="${field}" data-type="text" value="${value||''}" aria-label="Ngày">
+  </label>`;
+}
+function mobileCompositeDatePicker(arr,id,day,month,year){
+  const d=String(Number(day)||1).padStart(2,'0');
+  const m=String(Number(month)||1).padStart(2,'0');
+  const y=String(Number(year)||new Date().getFullYear());
+  const value=`${y}-${m}-${d}`;
+  return `<label class="m-date-picker" title="Đổi ngày">
+    <span>${d}/${m}/${y}</span>
+    <input type="date" data-composite-date="${arr}" data-id="${id}" value="${value}" aria-label="Ngày">
+  </label>`;
+}
+
 function fmt(n){
   n = Math.round(Number(n)||0);
   return new Intl.NumberFormat('en-US').format(n) + ' đ';
@@ -1521,8 +1704,9 @@ function renderTabs(){
     const active=el.querySelector('.tab-btn.active');
     if(!active) return;
     const left=active.offsetLeft, right=left+active.offsetWidth;
-    if(left < el.scrollLeft || right > el.scrollLeft + el.clientWidth){
-      active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+    const visibleLeft=el.scrollLeft+12, visibleRight=el.scrollLeft+el.clientWidth-12;
+    if(left < visibleLeft || right > visibleRight){
+      el.scrollTo({left:Math.max(0,left-12),behavior:'smooth'});
     }
   });
 }
@@ -1545,6 +1729,8 @@ function renderAll(opts){
     case 'vay': app.innerHTML = viewVay(); break;
     case 'data': app.innerHTML = viewData(); break;
   }
+  const fab=document.getElementById('fabAdd');
+  if(fab) fab.classList.toggle('hidden', !['tccn','ct'].includes(state.ui.currentTab));
   if(keepScroll) window.scrollTo(0, y);
 }
 
@@ -1645,8 +1831,8 @@ function viewTCCN(){
       <div class="card-label">Số dư thực tế</div>
       <div class="card-value jade">${fmt(t.soDuHienTai)}</div>
     </div>
-    <div class="card brass">
-      <div class="card-label">Số dư đầy đủ (đã cộng cả khoản đang Chờ thu)</div>
+    <div class="card brass balance-full-card">
+      <div class="card-label"><span class="desktop-label">Số dư đầy đủ (đã cộng cả khoản đang Chờ thu)</span><span class="mobile-label">Số dư + chờ thu</span></div>
       <div class="card-value">${fmt(t.soDuDayDu)}</div>
     </div>
     ${daChiChip}
@@ -1667,8 +1853,8 @@ function viewTCCN(){
       <div class="card-label">Tổng cần cho chu kỳ ${viewThang}/${viewNam} (đã gồm khoản vay)</div>
       <div class="card-value jade">${fmt(t.tongCanThangXem)}</div>
     </div>
-    <div class="card ${thieuHutDuKien?'rust':'jade'}">
-      <div class="card-label">Bù trừ${rel===0?'':' (tháng đã qua)'}</div>
+    <div class="card wide offset-card ${thieuHutDuKien?'rust':'jade'}">
+      <div class="card-label">Bù trừ${rel===0?'':' (chu kỳ đã qua)'}</div>
       <div class="card-value ${thieuHutDuKien?'rust':'jade'}">${fmt(t.buTruDuKien)}</div>
     </div>
   </div>` : `
@@ -1677,8 +1863,8 @@ function viewTCCN(){
       <div class="card-label">Số dư thực tế</div>
       <div class="card-value jade">${fmt(t.soDuHienTai)}</div>
     </div>
-    <div class="card brass">
-      <div class="card-label">Số dư đầy đủ (đã cộng cả khoản đang Chờ thu)</div>
+    <div class="card brass balance-full-card">
+      <div class="card-label"><span class="desktop-label">Số dư đầy đủ (đã cộng cả khoản đang Chờ thu)</span><span class="mobile-label">Số dư + chờ thu</span></div>
       <div class="card-value">${fmt(t.soDuDayDu)}</div>
     </div>
     <div class="card rust">
@@ -1697,7 +1883,7 @@ function viewTCCN(){
       <div class="card-label">Tổng cần cộng dồn (${t.months.length} chu kỳ, đã gồm khoản vay)</div>
       <div class="card-value">${fmt(t.tongCanLuyKe)}</div>
     </div>
-    <div class="card ${thieuHutDuKien?'rust':'jade'}">
+    <div class="card wide offset-card ${thieuHutDuKien?'rust':'jade'}">
       <div class="card-label">Dự kiến dư/thiếu đến hết chu kỳ ${viewThang}/${viewNam}</div>
       <div class="card-value ${thieuHutDuKien?'rust':'jade'}">${fmt(t.buTruDuKien)}</div>
     </div>
@@ -1705,13 +1891,11 @@ function viewTCCN(){
 
 
   const summaryChips = `
-  <div class="panel">
-    <h3 style="margin-bottom:14px;">Đang chờ xử lý (hôm nay)</h3>
+  <div class="panel pending-panel">
+    <h3>Dòng tiền đang chờ</h3>
     <div class="summary-row">
       <div class="summary-chip">Đang cho vay chưa thu<b>${fmt(t.chovayOutstanding)}</b></div>
       <div class="summary-chip">Đang chờ thu về<b>${fmt(t.chotraOutstanding)}</b></div>
-      <div class="summary-chip">Dư nợ trả góp đến hạn chu kỳ ${viewThang}/${viewNam}<b>${fmt(t.duNoThangXem)}</b></div>
-      <div class="summary-chip">Khoản vay chưa trả (không theo tháng)<b>${fmt(t.duNoVAY)}</b></div>
     </div>
   </div>`;
 
@@ -1767,7 +1951,7 @@ function viewTCCN(){
 
   const header = `
   <div class="section-title">Tổng quan</div>
-  <p class="section-sub">Bức tranh tài chính tổng hợp — dùng nút ‹ › để xem trước ngân sách và nợ đến hạn của các tháng tương lai, giúp tính ra cần tiết kiệm bao nhiêu mới đủ trả nợ.</p>`;
+  <p class="section-sub mobile-compact-help">Tình hình tiền hiện tại và số cần chuẩn bị cho từng chu kỳ.</p>`;
 
   return header + monthNav + statusBanner + vuotBanner + cardsBlock + hangMucVuotDetail + projectionDetail + summaryChips;
 }
@@ -2201,7 +2385,7 @@ function viewCT(){
 
   return `
   <div class="section-title">Chi tiêu chi tiết</div>
-  <p class="section-sub">Chạm vào một khoản bất kỳ để sửa hoặc xoá. Chạm vào tên tháng để nhảy thẳng tới tháng cần xem.</p>
+  <p class="section-sub mobile-compact-help">Chạm vào một khoản để sửa. Danh sách được gom theo ngày để xem nhanh trên điện thoại.</p>
 
   ${seg}
   ${monthNav}
@@ -2239,17 +2423,62 @@ function viewBB(){
       </td>
       <td class="num mono" data-label="Tổng">${fmt(r.tong)}</td>
       <td class="num mono" data-label="Số lần chi">${r.soLanChi}</td>
-      <td class="num mono" data-label="Đã chi tháng này">${fmt(r.daChi)}</td>
+      <td class="num mono" data-label="Đã chi chu kỳ">${fmt(r.daChi)}</td>
       <td class="num mono" data-label="Còn lại">${fmt(r.conLai)}</td>
       <td class="center" data-label="Trạng thái"><span class="pill ${r.conLai>=0?'ok':'warn'}">${r.conLai>=0?'OK':'Vượt'}</span></td>
       <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="bb" data-id="${r.id}" title="Xoá">✕</button></td>
     </tr>
   `).join('') : `<tr><td colspan="10" class="empty-state">Chưa có hạng mục ngân sách nào.</td></tr>`;
 
+  const mobileBody = rows.length ? rows.map(r=>{
+    const pct = r.tong>0 ? Math.min(100, Math.max(0, r.daChi/r.tong*100)) : 0;
+    const over = r.conLai < 0;
+    return `
+    <article class="budget-m-card ${over?'is-over':''}">
+      <div class="budget-m-head">
+        <input class="m-title-input" type="text" data-array="bb" data-id="${r.id}" data-field="loai" data-type="text" value="${esc(r.loai)}" aria-label="Hạng mục">
+        <span class="pill ${over?'warn':'ok'}">${over?'Vượt':'OK'}</span>
+      </div>
+
+      <div class="budget-m-balance">
+        <span>Còn lại</span>
+        <b class="${over?'rust':'jade'}">${fmt(r.conLai)}</b>
+      </div>
+      <div class="budget-m-progress"><i style="width:${pct.toFixed(1)}%"></i></div>
+      <div class="budget-m-caption">
+        <span>Đã chi <b>${fmt(r.daChi)}</b></span>
+        <span>Ngân sách <b>${fmt(r.tong)}</b></span>
+        <span>${r.soLanChi} khoản</span>
+      </div>
+
+      <div class="budget-m-controls">
+        <label class="m-mini-field">
+          <span>${r.cheDo==='khongGioiHan'?'Tổng NS':'Đơn giá'}</span>
+          <input type="text" inputmode="numeric" data-array="bb" data-id="${r.id}" data-field="donGia" data-type="money" value="${formatNumberPlain(r.donGia)}">
+        </label>
+        <label class="m-mini-field">
+          <span>Chế độ</span>
+          <select data-array="bb" data-id="${r.id}" data-field="cheDo" data-type="text">
+            <option value="coDinh" ${r.cheDo==='coDinh'?'selected':''}>Cố định</option>
+            <option value="auto" ${r.cheDo==='auto'?'selected':''}>Tự động</option>
+            <option value="khongGioiHan" ${r.cheDo==='khongGioiHan'?'selected':''}>Không giới hạn</option>
+          </select>
+        </label>
+        <label class="m-mini-field">
+          <span>Số buổi</span>
+          ${r.cheDo==='coDinh'
+            ? `<input type="text" inputmode="numeric" data-array="bb" data-id="${r.id}" data-field="soBuoiCoDinh" data-type="number" value="${r.soBuoiCoDinh}">`
+            : `<span class="m-readonly">${r.cheDo==='auto' ? r.soBuoi : '—'}</span>`}
+        </label>
+        <button class="m-delete" data-action="delete" data-array="bb" data-id="${r.id}" title="Xoá hạng mục" aria-label="Xoá hạng mục">✕</button>
+      </div>
+    </article>`;
+  }).join('') : `<div class="mobile-empty">Chưa có hạng mục ngân sách nào.</div>`;
+
   const addForm = `
     <form class="add-form" data-add="bb">
       <input type="text" name="loai" placeholder="Tên hạng mục" required>
-      <input type="text" inputmode="numeric" data-type="money" name="donGia" placeholder="Đơn giá (hoặc Tổng ngân sách nếu chọn Không giới hạn)" required>
+      <input type="text" inputmode="numeric" data-type="money" name="donGia" placeholder="Đơn giá / tổng ngân sách" required>
       <select name="cheDo">
         <option value="coDinh">Số buổi cố định</option>
         <option value="auto">Ngày làm việc còn lại</option>
@@ -2260,33 +2489,31 @@ function viewBB(){
     </form>`;
 
   return `
-  <div class="section-title">Ngân sách theo hạng mục · Chu kỳ ${state.meta.thang}/${state.meta.nam}</div>
-  <p class="section-sub" style="margin-top:-4px"><b>${cycleLabel(state.meta.thang,state.meta.nam)}</b></p>
-  <p class="section-sub">Đơn giá × số buổi dự kiến trong tháng = ngân sách. "Ngày làm việc còn lại" tự đếm số ngày trong tuần (T2–T6) từ hôm nay đến hết chu kỳ 11→10. "Không giới hạn" dùng cho hạng mục không đặt trước số buổi (VD: đi chơi) — nhập thẳng <b>tổng ngân sách</b> vào ô "Đơn giá", chi vượt số đó vẫn báo Vượt như bình thường.</p>
+  <div class="section-title">Ngân sách · Chu kỳ ${state.meta.thang}/${state.meta.nam}</div>
+  <p class="section-sub mobile-compact-help"><b>${cycleLabel(state.meta.thang,state.meta.nam)}</b> · Mỗi hạng mục có ngân sách riêng; khoản vượt không bù trừ cho hạng mục còn dư.</p>
 
   <div class="priority-summary">
-  <div class="summary-row" id="bbSummaryRow">
-    <div class="summary-chip">Số tiền đã dùng<b id="bbSumDaDung">${fmt(sum.soTienDaDung)}</b></div>
-    <div class="summary-chip">Số tiền trong tháng cần<b id="bbSumTrongThangCan">${fmt(sum.soTienTrongThangCan)}</b></div>
-    <div class="summary-chip">Số tiền thực tế cần sử dụng<b id="bbSumThucTeCanSuDung">${fmt(sum.soTienThucTeCanSuDung)}</b></div>
-    <div class="summary-chip">Số tiền vượt quá<b id="bbSumVuotQua" style="color:${sum.vuotQua>0?'#EF4444':'inherit'}">${fmt(sum.vuotQua)}</b></div>
-    <div class="summary-chip">Số tiền cần<b id="bbSumCan">${fmt(sum.soTienCan)}</b></div>
-  </div>
+    <div class="summary-row budget-summary" id="bbSummaryRow">
+      <div class="summary-chip">Đã dùng<b id="bbSumDaDung">${fmt(sum.soTienDaDung)}</b></div>
+      <div class="summary-chip">Ngân sách chu kỳ<b id="bbSumTrongThangCan">${fmt(sum.soTienTrongThangCan)}</b></div>
+      <div class="summary-chip">Thực tế cần dùng<b id="bbSumThucTeCanSuDung">${fmt(sum.soTienThucTeCanSuDung)}</b></div>
+      <div class="summary-chip">Vượt ngân sách<b id="bbSumVuotQua" style="color:${sum.vuotQua>0?'#EF4444':'inherit'}">${fmt(sum.vuotQua)}</b></div>
+      <div class="summary-chip budget-summary-wide">Còn cần<b id="bbSumCan">${fmt(sum.soTienCan)}</b></div>
+    </div>
   </div>
 
   ${wrapAddForm('bb', 'Thêm hạng mục', addForm)}
 
-  <div class="table-scroll">
+  <div class="desktop-only table-scroll">
     <table>
       <thead><tr>
         <th>Loại</th><th class="num">Đơn giá</th><th>Chế độ số buổi</th><th class="num">Số buổi</th>
-        <th class="num">Tổng</th><th class="num">Số lần chi</th><th class="num">Đã chi tháng này</th><th class="num">Còn lại</th><th class="center">Trạng thái</th><th class="center">Xoá</th>
+        <th class="num">Tổng</th><th class="num">Số lần chi</th><th class="num">Đã chi chu kỳ</th><th class="num">Còn lại</th><th class="center">Trạng thái</th><th class="center">Xoá</th>
       </tr></thead>
       <tbody>${body}</tbody>
     </table>
   </div>
-
-
+  <div class="mobile-only mobile-record-list budget-mobile-list">${mobileBody}</div>
   `;
 }
 
@@ -2295,12 +2522,12 @@ function viewBB(){
    ========================================================== */
 function viewChoVay(){
   const rows = state.chovay.slice().sort((a,b)=>{
-    // Chưa thu hồi luôn ở trên; trong cùng nhóm, ngày gần đây nhất trước.
     const done = Number(!!a.daThu) - Number(!!b.daThu);
     if(done) return done;
     return (b.ngay||'').localeCompare(a.ngay||'');
   });
   const outstanding = computeChoVayOutstanding();
+
   const body = rows.length ? rows.map(r=>`
     <tr>
       <td data-label="Ngày"><input type="date" class="txt" data-array="chovay" data-id="${r.id}" data-field="ngay" data-type="text" value="${r.ngay||''}"></td>
@@ -2310,6 +2537,23 @@ function viewChoVay(){
       <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="chovay" data-id="${r.id}" title="Xoá">✕</button></td>
     </tr>
   `).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản cho vay nào.</td></tr>`;
+
+  const mobileBody = rows.length ? rows.map(r=>`
+    <article class="m-record ${r.daThu?'is-done':''}">
+      <div class="m-record-main">
+        <input class="m-record-title" type="text" data-array="chovay" data-id="${r.id}" data-field="khoan" data-type="text" value="${esc(r.khoan)}" aria-label="Khoản cho vay">
+        <input class="m-record-amount" type="text" inputmode="numeric" data-array="chovay" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}" aria-label="Số tiền">
+      </div>
+      <div class="m-record-actions">
+        ${mobileIsoDatePicker('chovay',r.id,'ngay',r.ngay)}
+        <label class="m-check ${r.daThu?'on':''}">
+          <input type="checkbox" data-array="chovay" data-id="${r.id}" data-field="daThu" data-type="checkbox" ${r.daThu?'checked':''}>
+          <span>Đã thu hồi</span>
+        </label>
+        <button class="m-delete" data-action="delete" data-array="chovay" data-id="${r.id}" title="Xoá" aria-label="Xoá">✕</button>
+      </div>
+    </article>
+  `).join('') : `<div class="mobile-empty">Chưa có khoản cho vay nào.</div>`;
 
   const addForm = `
     <form class="add-form" data-add="chovay">
@@ -2321,24 +2565,11 @@ function viewChoVay(){
 
   return `
   <div class="section-title">Cho vay</div>
-  <p class="section-sub">Các khoản bạn cho người khác vay/mượn. Khi tick "Đã thu hồi", số tiền sẽ tự động ngừng bị trừ khỏi Số dư hiện tại ở Tổng quan (coi như đã về lại túi bạn).</p>
-
-  <div class="priority-summary">
-  <div class="summary-row">
-    <div class="summary-chip">Đang cho vay (chưa thu hồi)<b>${fmt(outstanding)}</b></div>
-  </div>
-  </div>
-
+  <p class="section-sub mobile-compact-help">Tiền bạn đã đưa người khác vay. Tick <b>Đã thu hồi</b> khi tiền quay về.</p>
+  <div class="priority-summary"><div class="summary-row single-summary"><div class="summary-chip">Đang cho vay<b>${fmt(outstanding)}</b></div></div></div>
   ${wrapAddForm('chovay', 'Thêm khoản cho vay', addForm)}
-
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Ngày</th><th>Khoản</th><th class="num">Số tiền</th><th class="center">Đã thu hồi</th><th class="center">Xoá</th></tr></thead>
-      <tbody>${body}</tbody>
-    </table>
-  </div>
-
-
+  <div class="desktop-only table-scroll"><table><thead><tr><th>Ngày</th><th>Khoản</th><th class="num">Số tiền</th><th class="center">Đã thu hồi</th><th class="center">Xoá</th></tr></thead><tbody>${body}</tbody></table></div>
+  <div class="mobile-only mobile-record-list">${mobileBody}</div>
   `;
 }
 
@@ -2347,13 +2578,13 @@ function viewChoVay(){
    ========================================================== */
 function viewChoTra(){
   const rows = state.chotra.slice().sort((a,b)=>{
-    // Chưa nhận luôn ở trên; trong cùng nhóm, ngày gần đây nhất trước.
     const done = Number(!!a.daNhan) - Number(!!b.daNhan);
     if(done) return done;
     return (b.ngay||'').localeCompare(a.ngay||'');
   });
   const outstanding = computeChoTraOutstanding();
   const received = computeChoTraReceived();
+
   const body = rows.length ? rows.map(r=>`
     <tr>
       <td data-label="Ngày"><input type="date" class="txt" data-array="chotra" data-id="${r.id}" data-field="ngay" data-type="text" value="${r.ngay||''}"></td>
@@ -2363,6 +2594,23 @@ function viewChoTra(){
       <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="chotra" data-id="${r.id}" title="Xoá">✕</button></td>
     </tr>
   `).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản chờ thu nào.</td></tr>`;
+
+  const mobileBody = rows.length ? rows.map(r=>`
+    <article class="m-record ${r.daNhan?'is-done':''}">
+      <div class="m-record-main">
+        <input class="m-record-title" type="text" data-array="chotra" data-id="${r.id}" data-field="khoan" data-type="text" value="${esc(r.khoan)}" aria-label="Khoản chờ thu">
+        <input class="m-record-amount" type="text" inputmode="numeric" data-array="chotra" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}" aria-label="Số tiền">
+      </div>
+      <div class="m-record-actions">
+        ${mobileIsoDatePicker('chotra',r.id,'ngay',r.ngay)}
+        <label class="m-check ${r.daNhan?'on':''}">
+          <input type="checkbox" data-array="chotra" data-id="${r.id}" data-field="daNhan" data-type="checkbox" ${r.daNhan?'checked':''}>
+          <span>Đã nhận</span>
+        </label>
+        <button class="m-delete" data-action="delete" data-array="chotra" data-id="${r.id}" title="Xoá" aria-label="Xoá">✕</button>
+      </div>
+    </article>
+  `).join('') : `<div class="mobile-empty">Chưa có khoản chờ thu nào.</div>`;
 
   const addForm = `
     <form class="add-form" data-add="chotra">
@@ -2374,29 +2622,14 @@ function viewChoTra(){
 
   return `
   <div class="section-title">Chờ thu</div>
-  <p class="section-sub">Các khoản tiền sắp về túi bạn (lương, thưởng...). Khi tick "Đã nhận", số tiền sẽ <b>tự động cộng thêm vào Số dư hiện tại</b> ở Tổng quan — bạn không cần sửa lại số dư TPBank/tiền mặt thủ công.</p>
-
-  <div class="priority-summary">
-  <div class="summary-row">
-    <div class="summary-chip">Đang chờ nhận<b>${fmt(outstanding)}</b></div>
-    <div class="summary-chip">Đã nhận (đã cộng vào số dư)<b>${fmt(received)}</b></div>
-  </div>
-  </div>
-
+  <p class="section-sub mobile-compact-help">Tiền sắp về. Tick <b>Đã nhận</b> thì khoản đó tự cộng vào Số dư thực tế.</p>
+  <div class="priority-summary"><div class="summary-row"><div class="summary-chip">Đang chờ nhận<b>${fmt(outstanding)}</b></div><div class="summary-chip">Đã nhận<b>${fmt(received)}</b></div></div></div>
   ${wrapAddForm('chotra', 'Thêm khoản chờ thu', addForm)}
-
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Ngày</th><th>Khoản</th><th class="num">Số tiền</th><th class="center">Đã nhận</th><th class="center">Xoá</th></tr></thead>
-      <tbody>${body}</tbody>
-    </table>
-  </div>
-
-
+  <div class="desktop-only table-scroll"><table><thead><tr><th>Ngày</th><th>Khoản</th><th class="num">Số tiền</th><th class="center">Đã nhận</th><th class="center">Xoá</th></tr></thead><tbody>${body}</tbody></table></div>
+  <div class="mobile-only mobile-record-list">${mobileBody}</div>
   `;
 }
 
-/* ---------- Gom danh sách theo THÁNG/NĂM, tách riêng phần đã xong / chưa xong ---------- */
 function groupByMonthArr(rows){
   const map = new Map();
   rows.forEach(r=>{
@@ -2470,17 +2703,16 @@ function chartMonthlyStacked(rows, opts){
    ========================================================== */
 function viewDuNo(){
   const rows = state.duno.slice().sort((a,b)=>{
-    // Việc còn phải xử lý lên đầu. Tháng gần trước, tháng xa sau.
     const done = Number(!!a.daHoanThanh) - Number(!!b.daHoanThanh);
     if(done) return done;
     return (Number(a.nam)-Number(b.nam)) || (Number(a.thang)-Number(b.thang)) || (Number(a.ngay)-Number(b.ngay));
   });
   const {thang, nam} = state.meta;
   const duNoHienTai = computeDuNoThang(thang, nam);
-
   const viewThang = state.ui.duNoThangKhac ?? thang;
   const viewNam = state.ui.duNoNamKhac ?? nam;
   const duNoKhac = computeDuNoThang(Number(viewThang), Number(viewNam));
+  const otherMonthValue = `${viewNam}-${String(viewThang).padStart(2,'0')}`;
 
   const body = rows.length ? rows.map(r=>`
     <tr>
@@ -2495,40 +2727,38 @@ function viewDuNo(){
     </tr>
   `).join('') : `<tr><td colspan="8" class="empty-state">Chưa có khoản dư nợ trả góp nào.</td></tr>`;
 
+  const mobileBody = rows.length ? rows.map(r=>`
+    <article class="m-record debt-record ${r.daHoanThanh?'is-done':''}">
+      <div class="m-record-main">
+        <input class="m-record-title" type="text" data-array="duno" data-id="${r.id}" data-field="ten" data-type="text" value="${esc(r.ten)}" aria-label="Tên khoản nợ">
+        <input class="m-record-amount" type="text" inputmode="numeric" data-array="duno" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}" aria-label="Số tiền">
+      </div>
+      <input class="m-record-note" type="text" data-array="duno" data-id="${r.id}" data-field="ghiChu" data-type="text" value="${esc(r.ghiChu||'')}" placeholder="Ghi chú" aria-label="Ghi chú">
+      <div class="m-record-actions">
+        ${mobileCompositeDatePicker('duno',r.id,r.ngay,r.thang,r.nam)}
+        <label class="m-check ${r.daHoanThanh?'on':''}">
+          <input type="checkbox" data-array="duno" data-id="${r.id}" data-field="daHoanThanh" data-type="checkbox" ${r.daHoanThanh?'checked':''}>
+          <span>Đã trả</span>
+        </label>
+        <button class="m-delete" data-action="delete" data-array="duno" data-id="${r.id}" title="Xoá" aria-label="Xoá">✕</button>
+      </div>
+    </article>
+  `).join('') : `<div class="mobile-empty">Chưa có khoản dư nợ trả góp nào.</div>`;
+
+  const chart = chartMonthlyStacked(state.duno, {title:'Dư nợ trả góp theo chu kỳ',emptyText:'Chưa có khoản dư nợ trả góp nào để vẽ biểu đồ.',unpaidLabel:'Chưa trả', paidLabel:'Đã hoàn thành'});
+
   return `
-  <div class="section-title">Dư nợ trả góp</div>
-  <p class="section-sub">Các khoản nợ trả góp theo kỳ (VD: TPBank, Shopee...) — tự động cộng vào "Tổng dư nợ" ở Tổng quan theo đúng chu kỳ 11→10 hiện tại. Mẹo: sang tab <b>Tổng quan</b> và bấm nút ‹ › để xem trước dư nợ + ngân sách của các tháng tương lai.</p>
-
-  <div class="cards priority-summary" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
-    <div class="card rust">
-      <div class="card-label">Dư nợ chu kỳ hiện tại (${thang}/${nam})</div>
-      <div class="card-value">${fmt(duNoHienTai)}</div>
-    </div>
+  <div class="section-title">Dư nợ</div>
+  <p class="section-sub mobile-compact-help">Các khoản trả góp đến hạn theo chu kỳ 11→10. Khoản chưa hoàn thành được tính vào Bù trừ ở Tổng quan.</p>
+  <div class="cards priority-summary debt-summary"><div class="card rust"><div class="card-label">Đến hạn chu kỳ ${thang}/${nam}</div><div class="card-value">${fmt(duNoHienTai)}</div></div></div>
+  <div class="desktop-only">${chart}</div>
+  <details class="mobile-only mobile-chart-details"><summary>Xem biểu đồ dư nợ</summary><div class="mobile-chart-inner">${chart}</div></details>
+  <div class="desktop-only panel">
+    <h3>Xem dư nợ chu kỳ khác</h3>
+    <div class="meta-grid"><div class="field"><label>Tháng</label><input type="number" id="duNoThangInput" value="${viewThang}" min="1" max="12"></div><div class="field"><label>Năm</label><input type="number" id="duNoNamInput" value="${viewNam}"></div></div>
+    <div class="summary-row"><div class="summary-chip">Dư nợ chu kỳ ${viewThang}/${viewNam}<b>${fmt(duNoKhac)}</b></div></div>
   </div>
-
-  ${chartMonthlyStacked(state.duno, {
-    title:'Dư nợ trả góp theo tháng',
-    emptyText:'Chưa có khoản dư nợ trả góp nào để vẽ biểu đồ.',
-    unpaidLabel:'Chưa trả', paidLabel:'Đã hoàn thành'
-  })}
-
-  <div class="panel">
-    <h3>Xem dư nợ tháng khác</h3>
-    <div class="meta-grid">
-      <div class="field">
-        <label>Tháng</label>
-        <input type="number" id="duNoThangInput" value="${viewThang}" min="1" max="12">
-      </div>
-      <div class="field">
-        <label>Năm</label>
-        <input type="number" id="duNoNamInput" value="${viewNam}">
-      </div>
-    </div>
-    <div class="summary-row">
-      <div class="summary-chip">Dư nợ tháng ${viewThang}/${viewNam}<b>${fmt(duNoKhac)}</b></div>
-    </div>
-  </div>
-
+  <div class="mobile-only mobile-lookup"><label><span>Tra cứu chu kỳ</span><input type="month" id="duNoOtherMonthPick" value="${otherMonthValue}"></label><div><span>Dư nợ</span><b>${fmt(duNoKhac)}</b></div></div>
   ${wrapAddForm('duno', 'Thêm khoản nợ', `
     <form class="add-form" data-add="duno">
       <input type="text" inputmode="numeric" name="ngay" placeholder="Ngày" style="max-width:70px" required>
@@ -2540,13 +2770,8 @@ function viewDuNo(){
       <button type="submit">+ Thêm khoản nợ</button>
     </form>
   `)}
-
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Ngày</th><th>Tháng</th><th>Năm</th><th>Tên khoản nợ</th><th class="num">Số tiền</th><th>Ghi chú</th><th class="center">Đã hoàn thành</th><th class="center">Xoá</th></tr></thead>
-      <tbody>${body}</tbody>
-    </table>
-  </div>
+  <div class="desktop-only table-scroll"><table><thead><tr><th>Ngày</th><th>Tháng</th><th>Năm</th><th>Tên khoản nợ</th><th class="num">Số tiền</th><th>Ghi chú</th><th class="center">Đã hoàn thành</th><th class="center">Xoá</th></tr></thead><tbody>${body}</tbody></table></div>
+  <div class="mobile-only mobile-record-list">${mobileBody}</div>
   `;
 }
 
@@ -2555,7 +2780,6 @@ function viewDuNo(){
    ========================================================== */
 function viewVay(){
   const rows = state.vay.slice().sort((a,b)=>{
-    // Khoản chưa hoàn thành lên đầu; theo tháng gần -> xa.
     const done = Number(!!a.daHoanThanh) - Number(!!b.daHoanThanh);
     if(done) return done;
     return (Number(a.nam)-Number(b.nam)) || (Number(a.thang)-Number(b.thang)) || (Number(a.ngay)-Number(b.ngay));
@@ -2575,8 +2799,25 @@ function viewVay(){
     </tr>
   `).join('') : `<tr><td colspan="8" class="empty-state">Chưa có khoản vay nào.</td></tr>`;
 
-  const addForm = `
-    <form class="add-form" data-add="vay">
+  const mobileBody = rows.length ? rows.map(r=>`
+    <article class="m-record debt-record ${r.daHoanThanh?'is-done':''}">
+      <div class="m-record-main">
+        <input class="m-record-title" type="text" data-array="vay" data-id="${r.id}" data-field="ten" data-type="text" value="${esc(r.ten)}" aria-label="Tên khoản vay">
+        <input class="m-record-amount" type="text" inputmode="numeric" data-array="vay" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}" aria-label="Số tiền">
+      </div>
+      <input class="m-record-note" type="text" data-array="vay" data-id="${r.id}" data-field="ghiChu" data-type="text" value="${esc(r.ghiChu||'')}" placeholder="Ghi chú" aria-label="Ghi chú">
+      <div class="m-record-actions">
+        ${mobileCompositeDatePicker('vay',r.id,r.ngay,r.thang,r.nam)}
+        <label class="m-check ${r.daHoanThanh?'on':''}">
+          <input type="checkbox" data-array="vay" data-id="${r.id}" data-field="daHoanThanh" data-type="checkbox" ${r.daHoanThanh?'checked':''}>
+          <span>Đã trả</span>
+        </label>
+        <button class="m-delete" data-action="delete" data-array="vay" data-id="${r.id}" title="Xoá" aria-label="Xoá">✕</button>
+      </div>
+    </article>
+  `).join('') : `<div class="mobile-empty">Chưa có khoản vay nào.</div>`;
+
+  const addForm = `<form class="add-form" data-add="vay">
       <input type="text" inputmode="numeric" name="ngay" placeholder="Ngày" style="max-width:70px" required>
       <input type="text" inputmode="numeric" name="thang" placeholder="Tháng" style="max-width:70px" value="${state.meta.thang}" required>
       <input type="text" inputmode="numeric" name="nam" placeholder="Năm" style="max-width:90px" value="${state.meta.nam}" required>
@@ -2586,32 +2827,17 @@ function viewVay(){
       <button type="submit">+ Thêm khoản vay</button>
     </form>`;
 
+  const chart = chartMonthlyStacked(state.vay, {title:'Khoản vay theo chu kỳ',emptyText:'Chưa có khoản vay nào để vẽ biểu đồ.',unpaidLabel:'Chưa trả', paidLabel:'Đã hoàn thành'});
+
   return `
   <div class="section-title">Khoản vay</div>
-  <p class="section-sub">Các khoản bạn vay người khác/tổ chức — không tự reset theo tháng, chỉ mất khi tick "Đã hoàn thành". Khoản vay <b>chưa trả</b> không trừ vào "Số dư thực tế" (tiền vẫn còn nguyên trong túi bạn), nhưng được tính ngay vào "Bù trừ" ở tab Tổng quan như một khoản <b>cần trả ngay</b> — không đợi tới tháng nào như Dư nợ trả góp.</p>
-
-  <div class="priority-summary">
-  <div class="summary-row">
-    <div class="summary-chip">Tổng còn nợ vay<b>${fmt(outstanding)}</b></div>
-  </div>
-  </div>
-
-  ${chartMonthlyStacked(state.vay, {
-    title:'Khoản vay theo tháng',
-    emptyText:'Chưa có khoản vay nào để vẽ biểu đồ.',
-    unpaidLabel:'Chưa trả', paidLabel:'Đã hoàn thành'
-  })}
-
+  <p class="section-sub mobile-compact-help">Khoản vay chưa trả được tính ngay vào Bù trừ. Tick <b>Đã trả</b> khi tiền thực sự đã rời khỏi bạn.</p>
+  <div class="priority-summary"><div class="summary-row single-summary"><div class="summary-chip">Tổng còn nợ vay<b>${fmt(outstanding)}</b></div></div></div>
+  <div class="desktop-only">${chart}</div>
+  <details class="mobile-only mobile-chart-details"><summary>Xem biểu đồ khoản vay</summary><div class="mobile-chart-inner">${chart}</div></details>
   ${wrapAddForm('vay', 'Thêm khoản vay', addForm)}
-
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Ngày</th><th>Tháng</th><th>Năm</th><th>Tên khoản vay</th><th class="num">Số tiền</th><th>Ghi chú</th><th class="center">Đã hoàn thành</th><th class="center">Xoá</th></tr></thead>
-      <tbody>${body}</tbody>
-    </table>
-  </div>
-
-
+  <div class="desktop-only table-scroll"><table><thead><tr><th>Ngày</th><th>Tháng</th><th>Năm</th><th>Tên khoản vay</th><th class="num">Số tiền</th><th>Ghi chú</th><th class="center">Đã hoàn thành</th><th class="center">Xoá</th></tr></thead><tbody>${body}</tbody></table></div>
+  <div class="mobile-only mobile-record-list">${mobileBody}</div>
   `;
 }
 
@@ -3107,6 +3333,31 @@ document.addEventListener('change', e=>{
   // Chọn tháng trực tiếp bằng bộ chọn tháng gốc của iOS
   if(el.id==='ctMonthPick'){ pickMonth('ct', el.value); return; }
   if(el.id==='tccnMonthPick'){ pickMonth('tccn', el.value); return; }
+
+  // Ngày gộp cho card mobile Dư nợ / Vay
+  if(el.dataset && el.dataset.compositeDate){
+    const arrName=el.dataset.compositeDate, id=el.dataset.id;
+    const row=state[arrName] && state[arrName].find(r=>r.id===id);
+    const parts=String(el.value||'').split('-');
+    if(row && parts.length===3){
+      row.nam=parseInt(parts[0],10)||row.nam;
+      row.thang=parseInt(parts[1],10)||row.thang;
+      row.ngay=parseInt(parts[2],10)||row.ngay;
+      saveState(); renderAll({keepScroll:true});
+    }
+    return;
+  }
+
+  // Tra cứu dư nợ bằng picker tháng trên mobile
+  if(el.id==='duNoOtherMonthPick'){
+    const parts=String(el.value||'').split('-');
+    if(parts.length===2){
+      state.ui.duNoNamKhac=parseInt(parts[0],10)||state.meta.nam;
+      state.ui.duNoThangKhac=parseInt(parts[1],10)||state.meta.thang;
+      saveState(); renderAll({keepScroll:true});
+    }
+    return;
+  }
 
   // Xem dư nợ tháng khác
   if(el.id==='duNoThangInput' || el.id==='duNoNamInput'){
