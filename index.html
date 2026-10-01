@@ -12,6 +12,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Sổ Chi Tiêu</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://ngnrlvcgwkayehkzhdap.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -1166,7 +1168,7 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
 <script>
 /* ==========================================================
    STATE
@@ -1233,12 +1235,66 @@ function defaultUI(){
   };
 }
 /* Bổ sung các trường UI còn thiếu vào dữ liệu cũ mà không đụng tới trường đã có */
+/* ---------- Làm sạch dữ liệu (cloud, import, localStorage) ---------- */
+const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const TABS_OK = ['tccn','ct','bb','chovay','chotra','duno','vay','data'];
+const NUM_KEYS = new Set(['soTien','donGia','soBuoiCoDinh','thang','nam']);
+const BOOL_KEYS = new Set(['daHoanThanh','daNhan','daThu']);
+const CHEDO_OK = ['auto','coDinh','khongGioiHan'];
+const MAX_ROWS = 5000;
+function cleanNum(v){ const n=Number(v); return Number.isFinite(n)?Math.trunc(n):0; }
+function cleanRow(arrName,r){
+  if(!r || typeof r!=='object' || Array.isArray(r)) return null;
+  const o = {};
+  for(const k of Object.keys(r)){
+    if(!/^[A-Za-z][A-Za-z0-9_]{0,30}$/.test(k)) continue;
+    const v = r[k];
+    if(k==='id') o.id = ID_RE.test(String(v)) ? String(v) : uid();
+    else if(NUM_KEYS.has(k)) o[k] = cleanNum(v);
+    else if(BOOL_KEYS.has(k)) o[k] = (v===true);
+    else if(k==='cheDo') o[k] = CHEDO_OK.includes(v) ? v : 'auto';
+    else if(k==='ngay'){
+      if(arrName==='duno' || arrName==='vay') o.ngay = Math.min(31, Math.max(1, cleanNum(v) || 1));
+      else o.ngay = DATE_RE.test(String(v)) ? String(v) : '';
+    }
+    else if(typeof v==='string') o[k] = v.slice(0,500);
+    else if(typeof v==='number' && Number.isFinite(v)) o[k] = v;
+    else if(typeof v==='boolean') o[k] = v;
+  }
+  if(!o.id) o.id = uid();
+  return o;
+}
+function cleanRows(arrName,arr){
+  if(!Array.isArray(arr)) return [];
+  return arr.slice(0,MAX_ROWS).map(r=>cleanRow(arrName,r)).filter(Boolean);
+}
+function cleanMeta(m,d){
+  const x = (m && typeof m==='object') ? m : {};
+  const thang = cleanNum(x.thang), nam = cleanNum(x.nam);
+  const g = x.ghiNhanNgay;
+  return {
+    thang: (thang>=1 && thang<=12) ? thang : d.thang,
+    nam: (nam>=2000 && nam<=2100) ? nam : d.nam,
+    ghiNhanNgay: (g==='' || DATE_RE.test(String(g||''))) ? g : d.ghiNhanNgay,
+    tpbank: cleanNum(x.tpbank),
+    tienMat: cleanNum(x.tienMat),
+  };
+}
+/* Bổ sung các trường UI còn thiếu vào dữ liệu cũ mà không đụng tới trường đã có */
 function migrateUI(obj){
-  obj.ui = obj.ui || {};
+  obj.ui = (obj.ui && typeof obj.ui==='object') ? obj.ui : {};
   const d = defaultUI();
   for(const k in d){ if(obj.ui[k]===undefined) obj.ui[k] = d[k]; }
-  if(!Array.isArray(obj.ui.ctCollapsedDays)) obj.ui.ctCollapsedDays = [];
+  if(!TABS_OK.includes(obj.ui.currentTab)) obj.ui.currentTab = 'tccn';
   if(!['ngay','chart','all'].includes(obj.ui.ctMode)) obj.ui.ctMode = 'ngay';
+  obj.ui.ctChiThangNay = (obj.ui.ctChiThangNay !== false);
+  ['duNoThangKhac','duNoNamKhac','tccnViewThang','tccnViewNam','ctViewThang','ctViewNam'].forEach(k=>{
+    const v = obj.ui[k];
+    obj.ui[k] = (v===null || v===undefined || v==='' || !Number.isFinite(Number(v))) ? null : Math.trunc(Number(v));
+  });
+  obj.ui.ctCollapsedDays = Array.isArray(obj.ui.ctCollapsedDays)
+    ? obj.ui.ctCollapsedDays.filter(s=>typeof s==='string' && DATE_RE.test(s)).slice(0,MAX_ROWS) : [];
   return obj;
 }
 
@@ -1249,6 +1305,10 @@ function migrateUI(obj){
    ========================================================== */
 const SUPABASE_URL = 'https://ngnrlvcgwkayehkzhdap.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_V1wWHHnyuHr5-ChR8lU_7Q_cSe4jo6q';
+if(!window.supabase){
+  document.getElementById('authError').textContent='Không tải được thư viện đăng nhập. Hãy kiểm tra mạng rồi tải lại trang.';
+  throw new Error('supabase-js not loaded');
+}
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 let currentUser = null;
 let currentUsername = '';
@@ -1267,20 +1327,20 @@ function usernameFromUser(user){
 }
 function uiStorageKey(){ return STORAGE_KEY+'_ui_'+(currentUser?.id||'guest'); }
 function loadLocalUI(){
-  try{ const raw=localStorage.getItem(uiStorageKey()); if(raw) return {...defaultUI(),...JSON.parse(raw)}; }catch(e){}
+  try{ const raw=localStorage.getItem(uiStorageKey()); if(raw){ const p=JSON.parse(raw); if(p && typeof p==='object' && !Array.isArray(p)) return {...defaultUI(),...p}; } }catch(e){}
   return defaultUI();
 }
 function cloudDataFromState(){
   return {meta:state.meta,ct:state.ct,bb:state.bb,chovay:state.chovay,chotra:state.chotra,duno:state.duno,vay:state.vay};
 }
 function normalizeCloudData(data){
-  const d=defaultState();
-  const x=(data&&typeof data==='object')?data:{};
+  const d = defaultState();
+  const x = (data && typeof data==='object' && !Array.isArray(data)) ? data : {};
   return migrateUI({
-    meta:{...d.meta,...(x.meta||{})},
-    ct:Array.isArray(x.ct)?x.ct:[], bb:Array.isArray(x.bb)?x.bb:d.bb,
-    chovay:Array.isArray(x.chovay)?x.chovay:[], chotra:Array.isArray(x.chotra)?x.chotra:[],
-    duno:Array.isArray(x.duno)?x.duno:[], vay:Array.isArray(x.vay)?x.vay:[], ui:loadLocalUI()
+    meta: cleanMeta(x.meta, d.meta),
+    ct: cleanRows('ct',x.ct), bb: Array.isArray(x.bb) ? cleanRows('bb',x.bb) : d.bb,
+    chovay: cleanRows('chovay',x.chovay), chotra: cleanRows('chotra',x.chotra),
+    duno: cleanRows('duno',x.duno), vay: cleanRows('vay',x.vay), ui: loadLocalUI()
   });
 }
 let cloudSaveQueue = Promise.resolve();
@@ -1447,7 +1507,7 @@ function fmtDateShort(dateStr){
 function mobileIsoDatePicker(arr,id,field,value){
   return `<label class="m-date-picker" title="Đổi ngày">
     <span>${fmtDateShort(value)}</span>
-    <input type="date" data-array="${arr}" data-id="${id}" data-field="${field}" data-type="text" value="${value||''}" aria-label="Ngày">
+    <input type="date" data-array="${esc(arr)}" data-id="${esc(id)}" data-field="${esc(field)}" data-type="text" value="${esc(value||'')}" aria-label="Ngày">
   </label>`;
 }
 function mobileCompositeDatePicker(arr,id,day,month,year){
@@ -1457,7 +1517,7 @@ function mobileCompositeDatePicker(arr,id,day,month,year){
   const value=`${y}-${m}-${d}`;
   return `<label class="m-date-picker" title="Đổi ngày">
     <span>${d}/${m}/${y}</span>
-    <input type="date" data-composite-date="${arr}" data-id="${id}" value="${value}" aria-label="Ngày">
+    <input type="date" data-composite-date="${esc(arr)}" data-id="${esc(id)}" value="${esc(value)}" aria-label="Ngày">
   </label>`;
 }
 
@@ -1762,7 +1822,7 @@ function viewSetupPanel(highlight){
       </div>
       <div class="field">
         <label>Ngày ghi nhận</label>
-        <input type="date" data-meta="ghiNhanNgay" data-type="text" value="${state.meta.ghiNhanNgay||''}">
+        <input type="date" data-meta="ghiNhanNgay" data-type="text" value="${esc(state.meta.ghiNhanNgay||'')}">
       </div>
     </div>
     <div class="settings-note">Mỗi chu kỳ chạy từ ngày <b>11</b> của tháng này đến hết ngày <b>10</b> của tháng sau.</div>
@@ -2406,10 +2466,10 @@ function viewBB(){
 
   const body = rows.length ? rows.map(r=>`
     <tr>
-      <td data-label="Loại"><input type="text" class="txt" data-array="bb" data-id="${r.id}" data-field="loai" data-type="text" value="${esc(r.loai)}"></td>
-      <td class="num" data-label="${r.cheDo==='khongGioiHan'?'Tổng ngân sách':'Đơn giá'}"><input type="text" inputmode="numeric" data-array="bb" data-id="${r.id}" data-field="donGia" data-type="money" value="${formatNumberPlain(r.donGia)}"></td>
+      <td data-label="Loại"><input type="text" class="txt" data-array="bb" data-id="${esc(r.id)}" data-field="loai" data-type="text" value="${esc(r.loai)}"></td>
+      <td class="num" data-label="${r.cheDo==='khongGioiHan'?'Tổng ngân sách':'Đơn giá'}"><input type="text" inputmode="numeric" data-array="bb" data-id="${esc(r.id)}" data-field="donGia" data-type="money" value="${formatNumberPlain(r.donGia)}"></td>
       <td data-label="Chế độ số buổi">
-        <select data-array="bb" data-id="${r.id}" data-field="cheDo" data-type="text">
+        <select data-array="bb" data-id="${esc(r.id)}" data-field="cheDo" data-type="text">
           <option value="coDinh" ${r.cheDo==='coDinh'?'selected':''}>Cố định</option>
           <option value="auto" ${r.cheDo==='auto'?'selected':''}>Ngày làm việc còn lại</option>
           <option value="khongGioiHan" ${r.cheDo==='khongGioiHan'?'selected':''}>Không giới hạn</option>
@@ -2417,7 +2477,7 @@ function viewBB(){
       </td>
       <td class="num" data-label="Số buổi">
         ${r.cheDo==='coDinh'
-          ? `<input type="text" inputmode="numeric" data-array="bb" data-id="${r.id}" data-field="soBuoiCoDinh" data-type="number" value="${r.soBuoiCoDinh}">`
+          ? `<input type="text" inputmode="numeric" data-array="bb" data-id="${esc(r.id)}" data-field="soBuoiCoDinh" data-type="number" value="${r.soBuoiCoDinh}">`
           : r.cheDo==='auto' ? `<span class="mono">${r.soBuoi}</span>`
           : `<span class="mono" style="color:var(--ink-faint)">—</span>`}
       </td>
@@ -2426,7 +2486,7 @@ function viewBB(){
       <td class="num mono" data-label="Đã chi chu kỳ">${fmt(r.daChi)}</td>
       <td class="num mono" data-label="Còn lại">${fmt(r.conLai)}</td>
       <td class="center" data-label="Trạng thái"><span class="pill ${r.conLai>=0?'ok':'warn'}">${r.conLai>=0?'OK':'Vượt'}</span></td>
-      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="bb" data-id="${r.id}" title="Xoá">✕</button></td>
+      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="bb" data-id="${esc(r.id)}" title="Xoá">✕</button></td>
     </tr>
   `).join('') : `<tr><td colspan="10" class="empty-state">Chưa có hạng mục ngân sách nào.</td></tr>`;
 
@@ -2436,7 +2496,7 @@ function viewBB(){
     return `
     <article class="budget-m-card ${over?'is-over':''}">
       <div class="budget-m-head">
-        <input class="m-title-input" type="text" data-array="bb" data-id="${r.id}" data-field="loai" data-type="text" value="${esc(r.loai)}" aria-label="Hạng mục">
+        <input class="m-title-input" type="text" data-array="bb" data-id="${esc(r.id)}" data-field="loai" data-type="text" value="${esc(r.loai)}" aria-label="Hạng mục">
         <span class="pill ${over?'warn':'ok'}">${over?'Vượt':'OK'}</span>
       </div>
 
@@ -2454,11 +2514,11 @@ function viewBB(){
       <div class="budget-m-controls">
         <label class="m-mini-field">
           <span>${r.cheDo==='khongGioiHan'?'Tổng NS':'Đơn giá'}</span>
-          <input type="text" inputmode="numeric" data-array="bb" data-id="${r.id}" data-field="donGia" data-type="money" value="${formatNumberPlain(r.donGia)}">
+          <input type="text" inputmode="numeric" data-array="bb" data-id="${esc(r.id)}" data-field="donGia" data-type="money" value="${formatNumberPlain(r.donGia)}">
         </label>
         <label class="m-mini-field">
           <span>Chế độ</span>
-          <select data-array="bb" data-id="${r.id}" data-field="cheDo" data-type="text">
+          <select data-array="bb" data-id="${esc(r.id)}" data-field="cheDo" data-type="text">
             <option value="coDinh" ${r.cheDo==='coDinh'?'selected':''}>Cố định</option>
             <option value="auto" ${r.cheDo==='auto'?'selected':''}>Tự động</option>
             <option value="khongGioiHan" ${r.cheDo==='khongGioiHan'?'selected':''}>Không giới hạn</option>
@@ -2467,10 +2527,10 @@ function viewBB(){
         <label class="m-mini-field">
           <span>Số buổi</span>
           ${r.cheDo==='coDinh'
-            ? `<input type="text" inputmode="numeric" data-array="bb" data-id="${r.id}" data-field="soBuoiCoDinh" data-type="number" value="${r.soBuoiCoDinh}">`
+            ? `<input type="text" inputmode="numeric" data-array="bb" data-id="${esc(r.id)}" data-field="soBuoiCoDinh" data-type="number" value="${r.soBuoiCoDinh}">`
             : `<span class="m-readonly">${r.cheDo==='auto' ? r.soBuoi : '—'}</span>`}
         </label>
-        <button class="m-delete" data-action="delete" data-array="bb" data-id="${r.id}" title="Xoá hạng mục" aria-label="Xoá hạng mục">✕</button>
+        <button class="m-delete" data-action="delete" data-array="bb" data-id="${esc(r.id)}" title="Xoá hạng mục" aria-label="Xoá hạng mục">✕</button>
       </div>
     </article>`;
   }).join('') : `<div class="mobile-empty">Chưa có hạng mục ngân sách nào.</div>`;
@@ -2530,27 +2590,27 @@ function viewChoVay(){
 
   const body = rows.length ? rows.map(r=>`
     <tr>
-      <td data-label="Ngày"><input type="date" class="txt" data-array="chovay" data-id="${r.id}" data-field="ngay" data-type="text" value="${r.ngay||''}"></td>
-      <td data-label="Khoản"><input type="text" class="txt" data-array="chovay" data-id="${r.id}" data-field="khoan" data-type="text" value="${esc(r.khoan)}"></td>
-      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="chovay" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
-      <td class="center" data-label="Đã thu hồi"><input type="checkbox" data-array="chovay" data-id="${r.id}" data-field="daThu" data-type="checkbox" ${r.daThu?'checked':''}></td>
-      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="chovay" data-id="${r.id}" title="Xoá">✕</button></td>
+      <td data-label="Ngày"><input type="date" class="txt" data-array="chovay" data-id="${esc(r.id)}" data-field="ngay" data-type="text" value="${esc(r.ngay||'')}"></td>
+      <td data-label="Khoản"><input type="text" class="txt" data-array="chovay" data-id="${esc(r.id)}" data-field="khoan" data-type="text" value="${esc(r.khoan)}"></td>
+      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="chovay" data-id="${esc(r.id)}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
+      <td class="center" data-label="Đã thu hồi"><input type="checkbox" data-array="chovay" data-id="${esc(r.id)}" data-field="daThu" data-type="checkbox" ${r.daThu?'checked':''}></td>
+      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="chovay" data-id="${esc(r.id)}" title="Xoá">✕</button></td>
     </tr>
   `).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản cho vay nào.</td></tr>`;
 
   const mobileBody = rows.length ? rows.map(r=>`
     <article class="m-record ${r.daThu?'is-done':''}">
       <div class="m-record-main">
-        <input class="m-record-title" type="text" data-array="chovay" data-id="${r.id}" data-field="khoan" data-type="text" value="${esc(r.khoan)}" aria-label="Khoản cho vay">
-        <input class="m-record-amount" type="text" inputmode="numeric" data-array="chovay" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}" aria-label="Số tiền">
+        <input class="m-record-title" type="text" data-array="chovay" data-id="${esc(r.id)}" data-field="khoan" data-type="text" value="${esc(r.khoan)}" aria-label="Khoản cho vay">
+        <input class="m-record-amount" type="text" inputmode="numeric" data-array="chovay" data-id="${esc(r.id)}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}" aria-label="Số tiền">
       </div>
       <div class="m-record-actions">
         ${mobileIsoDatePicker('chovay',r.id,'ngay',r.ngay)}
         <label class="m-check ${r.daThu?'on':''}">
-          <input type="checkbox" data-array="chovay" data-id="${r.id}" data-field="daThu" data-type="checkbox" ${r.daThu?'checked':''}>
+          <input type="checkbox" data-array="chovay" data-id="${esc(r.id)}" data-field="daThu" data-type="checkbox" ${r.daThu?'checked':''}>
           <span>Đã thu hồi</span>
         </label>
-        <button class="m-delete" data-action="delete" data-array="chovay" data-id="${r.id}" title="Xoá" aria-label="Xoá">✕</button>
+        <button class="m-delete" data-action="delete" data-array="chovay" data-id="${esc(r.id)}" title="Xoá" aria-label="Xoá">✕</button>
       </div>
     </article>
   `).join('') : `<div class="mobile-empty">Chưa có khoản cho vay nào.</div>`;
@@ -2587,27 +2647,27 @@ function viewChoTra(){
 
   const body = rows.length ? rows.map(r=>`
     <tr>
-      <td data-label="Ngày"><input type="date" class="txt" data-array="chotra" data-id="${r.id}" data-field="ngay" data-type="text" value="${r.ngay||''}"></td>
-      <td data-label="Khoản"><input type="text" class="txt" data-array="chotra" data-id="${r.id}" data-field="khoan" data-type="text" value="${esc(r.khoan)}"></td>
-      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="chotra" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
-      <td class="center" data-label="Đã nhận"><input type="checkbox" data-array="chotra" data-id="${r.id}" data-field="daNhan" data-type="checkbox" ${r.daNhan?'checked':''}></td>
-      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="chotra" data-id="${r.id}" title="Xoá">✕</button></td>
+      <td data-label="Ngày"><input type="date" class="txt" data-array="chotra" data-id="${esc(r.id)}" data-field="ngay" data-type="text" value="${esc(r.ngay||'')}"></td>
+      <td data-label="Khoản"><input type="text" class="txt" data-array="chotra" data-id="${esc(r.id)}" data-field="khoan" data-type="text" value="${esc(r.khoan)}"></td>
+      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="chotra" data-id="${esc(r.id)}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
+      <td class="center" data-label="Đã nhận"><input type="checkbox" data-array="chotra" data-id="${esc(r.id)}" data-field="daNhan" data-type="checkbox" ${r.daNhan?'checked':''}></td>
+      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="chotra" data-id="${esc(r.id)}" title="Xoá">✕</button></td>
     </tr>
   `).join('') : `<tr><td colspan="5" class="empty-state">Chưa có khoản chờ thu nào.</td></tr>`;
 
   const mobileBody = rows.length ? rows.map(r=>`
     <article class="m-record ${r.daNhan?'is-done':''}">
       <div class="m-record-main">
-        <input class="m-record-title" type="text" data-array="chotra" data-id="${r.id}" data-field="khoan" data-type="text" value="${esc(r.khoan)}" aria-label="Khoản chờ thu">
-        <input class="m-record-amount" type="text" inputmode="numeric" data-array="chotra" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}" aria-label="Số tiền">
+        <input class="m-record-title" type="text" data-array="chotra" data-id="${esc(r.id)}" data-field="khoan" data-type="text" value="${esc(r.khoan)}" aria-label="Khoản chờ thu">
+        <input class="m-record-amount" type="text" inputmode="numeric" data-array="chotra" data-id="${esc(r.id)}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}" aria-label="Số tiền">
       </div>
       <div class="m-record-actions">
         ${mobileIsoDatePicker('chotra',r.id,'ngay',r.ngay)}
         <label class="m-check ${r.daNhan?'on':''}">
-          <input type="checkbox" data-array="chotra" data-id="${r.id}" data-field="daNhan" data-type="checkbox" ${r.daNhan?'checked':''}>
+          <input type="checkbox" data-array="chotra" data-id="${esc(r.id)}" data-field="daNhan" data-type="checkbox" ${r.daNhan?'checked':''}>
           <span>Đã nhận</span>
         </label>
-        <button class="m-delete" data-action="delete" data-array="chotra" data-id="${r.id}" title="Xoá" aria-label="Xoá">✕</button>
+        <button class="m-delete" data-action="delete" data-array="chotra" data-id="${esc(r.id)}" title="Xoá" aria-label="Xoá">✕</button>
       </div>
     </article>
   `).join('') : `<div class="mobile-empty">Chưa có khoản chờ thu nào.</div>`;
@@ -2716,31 +2776,31 @@ function viewDuNo(){
 
   const body = rows.length ? rows.map(r=>`
     <tr>
-      <td class="num" data-label="Ngày"><input type="text" inputmode="numeric" data-array="duno" data-id="${r.id}" data-field="ngay" data-type="number" value="${r.ngay}" style="max-width:70px"></td>
-      <td class="num" data-label="Tháng"><input type="text" inputmode="numeric" data-array="duno" data-id="${r.id}" data-field="thang" data-type="number" value="${r.thang}" style="max-width:70px"></td>
-      <td class="num" data-label="Năm"><input type="text" inputmode="numeric" data-array="duno" data-id="${r.id}" data-field="nam" data-type="number" value="${r.nam}" style="max-width:80px"></td>
-      <td data-label="Tên khoản nợ"><input type="text" class="txt" data-array="duno" data-id="${r.id}" data-field="ten" data-type="text" value="${esc(r.ten)}"></td>
-      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="duno" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
-      <td data-label="Ghi chú"><input type="text" class="txt" data-array="duno" data-id="${r.id}" data-field="ghiChu" data-type="text" value="${esc(r.ghiChu||'')}"></td>
-      <td class="center" data-label="Đã hoàn thành"><input type="checkbox" data-array="duno" data-id="${r.id}" data-field="daHoanThanh" data-type="checkbox" ${r.daHoanThanh?'checked':''}></td>
-      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="duno" data-id="${r.id}" title="Xoá">✕</button></td>
+      <td class="num" data-label="Ngày"><input type="text" inputmode="numeric" data-array="duno" data-id="${esc(r.id)}" data-field="ngay" data-type="number" value="${r.ngay}" style="max-width:70px"></td>
+      <td class="num" data-label="Tháng"><input type="text" inputmode="numeric" data-array="duno" data-id="${esc(r.id)}" data-field="thang" data-type="number" value="${r.thang}" style="max-width:70px"></td>
+      <td class="num" data-label="Năm"><input type="text" inputmode="numeric" data-array="duno" data-id="${esc(r.id)}" data-field="nam" data-type="number" value="${r.nam}" style="max-width:80px"></td>
+      <td data-label="Tên khoản nợ"><input type="text" class="txt" data-array="duno" data-id="${esc(r.id)}" data-field="ten" data-type="text" value="${esc(r.ten)}"></td>
+      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="duno" data-id="${esc(r.id)}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
+      <td data-label="Ghi chú"><input type="text" class="txt" data-array="duno" data-id="${esc(r.id)}" data-field="ghiChu" data-type="text" value="${esc(r.ghiChu||'')}"></td>
+      <td class="center" data-label="Đã hoàn thành"><input type="checkbox" data-array="duno" data-id="${esc(r.id)}" data-field="daHoanThanh" data-type="checkbox" ${r.daHoanThanh?'checked':''}></td>
+      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="duno" data-id="${esc(r.id)}" title="Xoá">✕</button></td>
     </tr>
   `).join('') : `<tr><td colspan="8" class="empty-state">Chưa có khoản dư nợ trả góp nào.</td></tr>`;
 
   const mobileBody = rows.length ? rows.map(r=>`
     <article class="m-record debt-record ${r.daHoanThanh?'is-done':''}">
       <div class="m-record-main">
-        <input class="m-record-title" type="text" data-array="duno" data-id="${r.id}" data-field="ten" data-type="text" value="${esc(r.ten)}" aria-label="Tên khoản nợ">
-        <input class="m-record-amount" type="text" inputmode="numeric" data-array="duno" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}" aria-label="Số tiền">
+        <input class="m-record-title" type="text" data-array="duno" data-id="${esc(r.id)}" data-field="ten" data-type="text" value="${esc(r.ten)}" aria-label="Tên khoản nợ">
+        <input class="m-record-amount" type="text" inputmode="numeric" data-array="duno" data-id="${esc(r.id)}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}" aria-label="Số tiền">
       </div>
-      <input class="m-record-note" type="text" data-array="duno" data-id="${r.id}" data-field="ghiChu" data-type="text" value="${esc(r.ghiChu||'')}" placeholder="Ghi chú" aria-label="Ghi chú">
+      <input class="m-record-note" type="text" data-array="duno" data-id="${esc(r.id)}" data-field="ghiChu" data-type="text" value="${esc(r.ghiChu||'')}" placeholder="Ghi chú" aria-label="Ghi chú">
       <div class="m-record-actions">
         ${mobileCompositeDatePicker('duno',r.id,r.ngay,r.thang,r.nam)}
         <label class="m-check ${r.daHoanThanh?'on':''}">
-          <input type="checkbox" data-array="duno" data-id="${r.id}" data-field="daHoanThanh" data-type="checkbox" ${r.daHoanThanh?'checked':''}>
+          <input type="checkbox" data-array="duno" data-id="${esc(r.id)}" data-field="daHoanThanh" data-type="checkbox" ${r.daHoanThanh?'checked':''}>
           <span>Đã trả</span>
         </label>
-        <button class="m-delete" data-action="delete" data-array="duno" data-id="${r.id}" title="Xoá" aria-label="Xoá">✕</button>
+        <button class="m-delete" data-action="delete" data-array="duno" data-id="${esc(r.id)}" title="Xoá" aria-label="Xoá">✕</button>
       </div>
     </article>
   `).join('') : `<div class="mobile-empty">Chưa có khoản dư nợ trả góp nào.</div>`;
@@ -2788,31 +2848,31 @@ function viewVay(){
 
   const body = rows.length ? rows.map(r=>`
     <tr>
-      <td class="num" data-label="Ngày"><input type="text" inputmode="numeric" data-array="vay" data-id="${r.id}" data-field="ngay" data-type="number" value="${r.ngay}" style="max-width:70px"></td>
-      <td class="num" data-label="Tháng"><input type="text" inputmode="numeric" data-array="vay" data-id="${r.id}" data-field="thang" data-type="number" value="${r.thang}" style="max-width:70px"></td>
-      <td class="num" data-label="Năm"><input type="text" inputmode="numeric" data-array="vay" data-id="${r.id}" data-field="nam" data-type="number" value="${r.nam}" style="max-width:80px"></td>
-      <td data-label="Tên khoản vay"><input type="text" class="txt" data-array="vay" data-id="${r.id}" data-field="ten" data-type="text" value="${esc(r.ten)}"></td>
-      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="vay" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
-      <td data-label="Ghi chú"><input type="text" class="txt" data-array="vay" data-id="${r.id}" data-field="ghiChu" data-type="text" value="${esc(r.ghiChu||'')}"></td>
-      <td class="center" data-label="Đã hoàn thành"><input type="checkbox" data-array="vay" data-id="${r.id}" data-field="daHoanThanh" data-type="checkbox" ${r.daHoanThanh?'checked':''}></td>
-      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="vay" data-id="${r.id}" title="Xoá">✕</button></td>
+      <td class="num" data-label="Ngày"><input type="text" inputmode="numeric" data-array="vay" data-id="${esc(r.id)}" data-field="ngay" data-type="number" value="${r.ngay}" style="max-width:70px"></td>
+      <td class="num" data-label="Tháng"><input type="text" inputmode="numeric" data-array="vay" data-id="${esc(r.id)}" data-field="thang" data-type="number" value="${r.thang}" style="max-width:70px"></td>
+      <td class="num" data-label="Năm"><input type="text" inputmode="numeric" data-array="vay" data-id="${esc(r.id)}" data-field="nam" data-type="number" value="${r.nam}" style="max-width:80px"></td>
+      <td data-label="Tên khoản vay"><input type="text" class="txt" data-array="vay" data-id="${esc(r.id)}" data-field="ten" data-type="text" value="${esc(r.ten)}"></td>
+      <td class="num" data-label="Số tiền"><input type="text" inputmode="numeric" data-array="vay" data-id="${esc(r.id)}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}"></td>
+      <td data-label="Ghi chú"><input type="text" class="txt" data-array="vay" data-id="${esc(r.id)}" data-field="ghiChu" data-type="text" value="${esc(r.ghiChu||'')}"></td>
+      <td class="center" data-label="Đã hoàn thành"><input type="checkbox" data-array="vay" data-id="${esc(r.id)}" data-field="daHoanThanh" data-type="checkbox" ${r.daHoanThanh?'checked':''}></td>
+      <td class="center" data-label="Xoá"><button class="btn-icon" data-action="delete" data-array="vay" data-id="${esc(r.id)}" title="Xoá">✕</button></td>
     </tr>
   `).join('') : `<tr><td colspan="8" class="empty-state">Chưa có khoản vay nào.</td></tr>`;
 
   const mobileBody = rows.length ? rows.map(r=>`
     <article class="m-record debt-record ${r.daHoanThanh?'is-done':''}">
       <div class="m-record-main">
-        <input class="m-record-title" type="text" data-array="vay" data-id="${r.id}" data-field="ten" data-type="text" value="${esc(r.ten)}" aria-label="Tên khoản vay">
-        <input class="m-record-amount" type="text" inputmode="numeric" data-array="vay" data-id="${r.id}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}" aria-label="Số tiền">
+        <input class="m-record-title" type="text" data-array="vay" data-id="${esc(r.id)}" data-field="ten" data-type="text" value="${esc(r.ten)}" aria-label="Tên khoản vay">
+        <input class="m-record-amount" type="text" inputmode="numeric" data-array="vay" data-id="${esc(r.id)}" data-field="soTien" data-type="money" value="${formatNumberPlain(r.soTien)}" aria-label="Số tiền">
       </div>
-      <input class="m-record-note" type="text" data-array="vay" data-id="${r.id}" data-field="ghiChu" data-type="text" value="${esc(r.ghiChu||'')}" placeholder="Ghi chú" aria-label="Ghi chú">
+      <input class="m-record-note" type="text" data-array="vay" data-id="${esc(r.id)}" data-field="ghiChu" data-type="text" value="${esc(r.ghiChu||'')}" placeholder="Ghi chú" aria-label="Ghi chú">
       <div class="m-record-actions">
         ${mobileCompositeDatePicker('vay',r.id,r.ngay,r.thang,r.nam)}
         <label class="m-check ${r.daHoanThanh?'on':''}">
-          <input type="checkbox" data-array="vay" data-id="${r.id}" data-field="daHoanThanh" data-type="checkbox" ${r.daHoanThanh?'checked':''}>
+          <input type="checkbox" data-array="vay" data-id="${esc(r.id)}" data-field="daHoanThanh" data-type="checkbox" ${r.daHoanThanh?'checked':''}>
           <span>Đã trả</span>
         </label>
-        <button class="m-delete" data-action="delete" data-array="vay" data-id="${r.id}" title="Xoá" aria-label="Xoá">✕</button>
+        <button class="m-delete" data-action="delete" data-array="vay" data-id="${esc(r.id)}" title="Xoá" aria-label="Xoá">✕</button>
       </div>
     </article>
   `).join('') : `<div class="mobile-empty">Chưa có khoản vay nào.</div>`;
@@ -3372,6 +3432,7 @@ document.addEventListener('change', e=>{
   if(el.id==='fileImport'){
     const file = el.files[0];
     if(!file) return;
+    if(file.size > 5*1024*1024){ alert('File quá lớn (tối đa 5MB).'); el.value=''; return; }
     const reader = new FileReader();
     reader.onload = evt=>{
       try{
@@ -3381,7 +3442,7 @@ document.addEventListener('change', e=>{
           return;
         }
         if(confirm('Khôi phục sẽ GHI ĐÈ dữ liệu hiện tại trên Supabase. Tiếp tục?')){
-          state = migrateUI(parsed);
+          state = normalizeCloudData(parsed);
           saveState(); renderAll();
         }
       }catch(err){
