@@ -1196,15 +1196,15 @@ const LOAI_MAC_DINH = [
 ];
 
 function uid(){ return 'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
-function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
+/* Ngày hôm nay theo GIỜ ĐỊA PHƯƠNG. Trước đây dùng toISOString() (UTC) nên ở Việt Nam,
+   trước 7h sáng sẽ ra nhầm ngày hôm qua. */
+function todayStr(){ return ymd(new Date()); }
 
 function defaultState(){
-  const now = new Date();
-  const fm = (now.getDate()<=10)
-    ? (()=>{ let t=now.getMonth(), n=now.getFullYear(); if(t===0){t=12;n--;} return {thang:t,nam:n}; })()
-    : {thang:now.getMonth()+1,nam:now.getFullYear()};
+  const fm = financialMonthForDate(new Date());
   return {
     meta:{
+      autoCycle: true,      // true = chu kỳ tự chạy theo ngày hôm nay
       thang: fm.thang,
       nam: fm.nam,
       ghiNhanNgay: todayStr(),
@@ -1232,6 +1232,7 @@ function defaultUI(){
     ctViewThang:null, ctViewNam:null,
     ctMode:'ngay',        // 'ngay' = xem từng ngày | 'chart' = biểu đồ | 'all' = tất cả
     ctCollapsedDays:[],   // những ngày người dùng chủ động thu gọn
+    cycleKey:null,        // chu kỳ lần cuối app đã thấy — đổi chu kỳ thì thả các bộ lọc tháng về "hiện tại"
   };
 }
 /* Bổ sung các trường UI còn thiếu vào dữ liệu cũ mà không đụng tới trường đã có */
@@ -1274,6 +1275,7 @@ function cleanMeta(m,d){
   const thang = cleanNum(x.thang), nam = cleanNum(x.nam);
   const g = x.ghiNhanNgay;
   return {
+    autoCycle: x.autoCycle !== false,   // dữ liệu cũ chưa có trường này → mặc định BẬT tự động
     thang: (thang>=1 && thang<=12) ? thang : d.thang,
     nam: (nam>=2000 && nam<=2100) ? nam : d.nam,
     ghiNhanNgay: (g==='' || DATE_RE.test(String(g||''))) ? g : d.ghiNhanNgay,
@@ -1293,6 +1295,7 @@ function migrateUI(obj){
     const v = obj.ui[k];
     obj.ui[k] = (v===null || v===undefined || v==='' || !Number.isFinite(Number(v))) ? null : Math.trunc(Number(v));
   });
+  obj.ui.cycleKey = (typeof obj.ui.cycleKey==='string') ? obj.ui.cycleKey.slice(0,12) : null;
   obj.ui.ctCollapsedDays = Array.isArray(obj.ui.ctCollapsedDays)
     ? obj.ui.ctCollapsedDays.filter(s=>typeof s==='string' && DATE_RE.test(s)).slice(0,MAX_ROWS) : [];
   return obj;
@@ -1336,12 +1339,14 @@ function cloudDataFromState(){
 function normalizeCloudData(data){
   const d = defaultState();
   const x = (data && typeof data==='object' && !Array.isArray(data)) ? data : {};
-  return migrateUI({
+  const out = migrateUI({
     meta: cleanMeta(x.meta, d.meta),
     ct: cleanRows('ct',x.ct), bb: Array.isArray(x.bb) ? cleanRows('bb',x.bb) : d.bb,
     chovay: cleanRows('chovay',x.chovay), chotra: cleanRows('chotra',x.chotra),
     duno: cleanRows('duno',x.duno), vay: cleanRows('vay',x.vay), ui: loadLocalUI()
   });
+  syncCycleToToday(out);   // SỬA LỖI KẸT THÁNG 9: không tin tháng cũ lưu trên cloud nữa
+  return out;
 }
 let cloudSaveQueue = Promise.resolve();
 let cloudDirty = false;
@@ -1566,31 +1571,54 @@ function financialMonthForDate(date){
   }
   return {thang:d.getMonth()+1,nam:d.getFullYear()};
 }
-function weekdaysRemainingInMonth(year, month){
-  const today0=new Date();
-  const today=new Date(today0.getFullYear(),today0.getMonth(),today0.getDate());
+/* Số ngày làm việc (T2–T6) của TOÀN BỘ một chu kỳ. Dùng làm "số buổi" cho hạng mục chế độ
+   auto. Trước đây chỉ đếm số ngày CÒN LẠI (từ hôm nay) nhưng "Đã chi" lại cộng cả phần đã
+   tiêu từ đầu chu kỳ → càng về cuối chu kỳ ngân sách càng bé, hạng mục báo "Vượt" oan;
+   chu kỳ đã qua thì ngân sách = 0. Nay luôn tính trọn chu kỳ nên Tổng − Đã chi = Còn lại đúng. */
+function weekdaysInCycle(year, month){
   const start=cycleStartFor(month,year);
   const end=cycleEndFor(month,year);
-  let from=start;
-  if(today>=start && today<=end) from=today;
-  else if(today>end) return 0;
   let count=0;
-  for(let d=new Date(from); d<=end; d.setDate(d.getDate()+1)){
+  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
     const dow=d.getDay();
     if(dow>=1 && dow<=5) count++;
   }
   return count;
 }
+/* Số ngày còn lại của chu kỳ đang chạy của sổ (state.meta), tính cả hôm nay */
 function daysRemainingInCycle(){
   const now=new Date();
-  const fm=financialMonthForDate(now);
   const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-  const end=cycleEndFor(fm.thang,fm.nam);
-  return Math.max(0,Math.floor((end-today)/86400000)+1);
+  const start=cycleStartFor(state.meta.thang,state.meta.nam);
+  const end=cycleEndFor(state.meta.thang,state.meta.nam);
+  const from = today<start ? start : today;
+  return Math.max(0,Math.floor((end-from)/86400000)+1);
 }
 function cycleEndDate(){
-  const fm=financialMonthForDate(new Date());
-  return cycleEndFor(fm.thang,fm.nam);
+  return cycleEndFor(state.meta.thang,state.meta.nam);
+}
+/* Chu kỳ tài chính đang chạy theo ngày hôm nay */
+function currentCycle(){ return financialMonthForDate(new Date()); }
+/* Đưa meta.thang/nam về đúng chu kỳ của hôm nay (nếu đang để chế độ tự động).
+   Trả về true nếu có thay đổi. Nhận thêm `st` để dùng được cả khi đang nạp dữ liệu. */
+function syncCycleToToday(st){
+  st = st || state;
+  let changed = false;
+  if(st.meta.autoCycle !== false){
+    const fm = currentCycle();
+    if(st.meta.thang !== fm.thang || st.meta.nam !== fm.nam){
+      st.meta.thang = fm.thang; st.meta.nam = fm.nam; changed = true;
+    }
+  }
+  // Sang chu kỳ mới → thả các bộ chọn tháng đã ghim (vd: đang xem tháng 9) về "hiện tại"
+  const key = st.meta.thang+'/'+st.meta.nam;
+  if(st.ui.cycleKey !== key){
+    ['tccnViewThang','tccnViewNam','ctViewThang','ctViewNam','duNoThangKhac','duNoNamKhac']
+      .forEach(k=>{ st.ui[k] = null; });
+    st.ui.cycleKey = key;
+    changed = true;
+  }
+  return changed;
 }
 function tenThang(m,y){ return m+'/'+y; }
 function isFirstSetup(){
@@ -1638,7 +1666,7 @@ function computeBBRowsFor(thang, nam){
       const conLai = tong - daChi;
       return {...row, soBuoi:null, tong, daChi, soLanChi, conLai};
     }
-    const soBuoi = row.cheDo==='auto' ? weekdaysRemainingInMonth(nam, thang) : (Number(row.soBuoiCoDinh)||0);
+    const soBuoi = row.cheDo==='auto' ? weekdaysInCycle(nam, thang) : (Number(row.soBuoiCoDinh)||0);
     const tong = (Number(row.donGia)||0) * soBuoi;
     const conLai = tong - daChi;
     return {...row, soBuoi, tong, daChi, soLanChi, conLai};
@@ -1809,16 +1837,20 @@ function viewSetupPanel(highlight){
 
   <div class="settings-group">
     <div class="settings-group-title">Chu kỳ ghi chép</div>
+    <label class="settings-note" style="display:flex;align-items:center;gap:8px;margin:0 0 10px;cursor:pointer">
+      <input type="checkbox" data-meta="autoCycle" data-type="checkbox" ${state.meta.autoCycle!==false?'checked':''}>
+      <span><b>Tự động chuyển chu kỳ theo ngày hôm nay</b> (khuyên dùng)</span>
+    </label>
     <div class="meta-grid meta-grid-cycle">
       <div class="field">
         <label>Tháng bắt đầu chu kỳ</label>
-        <select data-meta="thang" data-type="number">
+        <select data-meta="thang" data-type="number" ${state.meta.autoCycle!==false?'disabled':''}>
           ${Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}" ${m===state.meta.thang?'selected':''}>Tháng ${m}</option>`).join('')}
         </select>
       </div>
       <div class="field">
         <label>Năm bắt đầu</label>
-        <input type="number" data-meta="nam" data-type="number" value="${state.meta.nam}">
+        <input type="number" data-meta="nam" data-type="number" value="${state.meta.nam}" ${state.meta.autoCycle!==false?'disabled':''}>
       </div>
       <div class="field">
         <label>Ngày ghi nhận</label>
@@ -1993,9 +2025,9 @@ function viewTCCN(){
             const dn = computeDuNoThang(m.thang, m.nam);
             return `<tr>
               <td data-label="Tháng" class="mono">${m.thang}/${m.nam}</td>
-              <td class="num mono" data-label="Ngân sách cần">${fmt(s.soTienCan)}</td>
+              <td class="num mono" data-label="Ngân sách cần">${fmt(s.soTienCanThucTe)}</td>
               <td class="num mono" data-label="Dư nợ đến hạn">${fmt(dn)}</td>
-              <td class="num mono" data-label="Tổng cần">${fmt(s.soTienCan+dn)}</td>
+              <td class="num mono" data-label="Tổng cần">${fmt(s.soTienCanThucTe+dn)}</td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -2055,7 +2087,8 @@ function dayHeadInfo(dateStr){
   let dow = DOW_SHORT[d.getDay()];
   if(diff===0) dow = 'HÔM NAY';
   else if(diff===1) dow = 'HÔM QUA';
-  return { dd:String(d.getDate()), dow, isToday:diff===0, full:DOW_FULL[d.getDay()], thang:d.getMonth()+1, nam:d.getFullYear() };
+  const fm = financialMonthForDate(d);
+  return { dd:String(d.getDate()), dow, isToday:diff===0, full:DOW_FULL[d.getDay()], thang:fm.thang, nam:fm.nam };
 }
 /* Gom danh sách khoản chi thành từng NGÀY, mới nhất lên trước */
 function groupByDay(rows){
@@ -2076,11 +2109,16 @@ function groupByDay(rows){
 
 /* ---------- Biểu đồ 1: chi tiêu từng ngày trong tháng (cột) ---------- */
 function chartDaily(rowsOfMonth, viewThang, viewNam){
-  const nd = daysInMonth(viewThang, viewNam);
+  // Chu kỳ chạy 11 → 10 tháng sau, nên cột thứ i là ngày (start + i), KHÔNG phải ngày i+1 của tháng dương lịch
+  const cStart = cycleStartFor(viewThang, viewNam);
+  const nd = Math.round((cycleEndFor(viewThang, viewNam) - cStart)/86400000) + 1;
+  const dayAt = i => new Date(cStart.getFullYear(), cStart.getMonth(), cStart.getDate()+i);
   const totals = new Array(nd).fill(0);
   rowsOfMonth.forEach(r=>{
     const d = parseDate(r.ngay);
-    if(d) totals[d.getDate()-1] += Number(r.soTien)||0;
+    if(!d) return;
+    const idx = Math.round((d - cStart)/86400000);
+    if(idx>=0 && idx<nd) totals[idx] += Number(r.soTien)||0;
   });
   const sum = totals.reduce((a,b)=>a+b,0);
   if(sum <= 0){
@@ -2097,23 +2135,21 @@ function chartDaily(rowsOfMonth, viewThang, viewNam){
   const gap = nd > 28 ? 2 : 2.6;
   const barW = (W - gap*(nd-1))/nd;
   const now = new Date();
-  const todayD = (now.getFullYear()===viewNam && now.getMonth()+1===viewThang) ? now.getDate() : -1;
+  const todayIdx = Math.round((new Date(now.getFullYear(),now.getMonth(),now.getDate()) - cStart)/86400000);
 
   const bars = totals.map((v,i)=>{
     const x = i*(barW+gap);
     const h = v>0 ? Math.max(3, (v/max)*plotH) : 2;
     const y = TOP + plotH - h;
-    const fill = v<=0 ? '#E1E6F0' : ((i+1)===todayD ? '#F59E0B' : 'url(#gBar)');
+    const fill = v<=0 ? '#E1E6F0' : (i===todayIdx ? '#F59E0B' : 'url(#gBar)');
     return `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barW.toFixed(2)}" height="${h.toFixed(2)}" rx="${Math.min(2.4, barW/2).toFixed(2)}" fill="${fill}"/>`;
   }).join('');
 
   const avgY = TOP + plotH - (tbNgayCoChi/max)*plotH;
   const ticks = [];
-  for(let d=1; d<=nd; d++){
-    if(d===1 || d%5===0){
-      const x = (d-1)*(barW+gap) + barW/2;
-      ticks.push(`<text x="${x.toFixed(2)}" y="${H-6}" text-anchor="middle" font-size="8.5" fill="#9AA6BA" font-family="IBM Plex Mono,monospace">${d}</text>`);
-    }
+  for(let i=0; i<nd; i+=5){
+    const x = i*(barW+gap) + barW/2;
+    ticks.push(`<text x="${x.toFixed(2)}" y="${H-6}" text-anchor="middle" font-size="8.5" fill="#9AA6BA" font-family="IBM Plex Mono,monospace">${dayAt(i).getDate()}</text>`);
   }
 
   return `
@@ -2122,8 +2158,8 @@ function chartDaily(rowsOfMonth, viewThang, viewNam){
       <h3 class="chart-title">Chi theo từng ngày</h3>
       <span class="chart-note">Cao nhất ${fmtShort(max)}</span>
     </div>
-    <p class="chart-sub">Ngày <b>${maxIdx+1}/${viewThang}</b> tiêu nhiều nhất (${fmt(max)}). Trung bình <b>${fmt(tbNgayCoChi)}</b>/ngày có chi — đường đứt đỏ.</p>
-    <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Biểu đồ cột chi tiêu từng ngày trong tháng ${viewThang}/${viewNam}">
+    <p class="chart-sub">Ngày <b>${dayAt(maxIdx).getDate()}/${dayAt(maxIdx).getMonth()+1}</b> tiêu nhiều nhất (${fmt(max)}). Trung bình <b>${fmt(tbNgayCoChi)}</b>/ngày có chi — đường đứt đỏ.</p>
+    <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Biểu đồ cột chi tiêu từng ngày trong chu kỳ ${viewThang}/${viewNam}">
       <defs>
         <linearGradient id="gBar" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#4338CA"/><stop offset="100%" stop-color="#0EA5E9"/>
@@ -2322,10 +2358,12 @@ function viewCT(){
   const tong = rows.reduce((s,r)=> s + (Number(r.soTien)||0), 0);
   const days = groupByDay(rows);
   const maxDay = days.reduce((m,d)=> Math.max(m, d.tong), 0);
-  const nd = daysInMonth(viewThang, viewNam);
+  const cStart = cycleStartFor(viewThang, viewNam);
+  const nd = Math.round((cycleEndFor(viewThang, viewNam) - cStart)/86400000) + 1;
   const now = new Date();
-  const laThangNay = (now.getFullYear()===viewNam && now.getMonth()+1===viewThang);
-  const soNgayDaQua = laThangNay ? now.getDate() : nd;
+  const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const elapsed = Math.round((todayMid - cStart)/86400000) + 1;   // ngày thứ mấy của chu kỳ
+  const soNgayDaQua = Math.min(nd, Math.max(1, elapsed));
   const tbMoiNgay = theoThang ? (tong / Math.max(1, soNgayDaQua)) : (days.length ? tong/days.length : 0);
   const homNay = days.find(d=> d.ngay === todayStr());
 
@@ -2389,7 +2427,7 @@ function viewCT(){
           const key = info.thang+'/'+info.nam;
           if(key !== lastMonthKey){
             lastMonthKey = key;
-            sep = `<div class="section-sub" style="margin:16px 0 8px; font-weight:700; color:var(--ink)">Tháng ${key}</div>`;
+            sep = `<div class="section-sub" style="margin:16px 0 8px; font-weight:700; color:var(--ink)">Tháng ${key} · ${cycleLabel(info.thang,info.nam)}</div>`;
           }
         }
         const items = d.items.map(it=>`
@@ -3088,9 +3126,10 @@ document.getElementById('quickAddForm').addEventListener('submit', e=>{
     if(d && state.ui.currentTab==='ct' && state.ui.ctMode!=='all'){
       const vT = state.ui.ctViewThang ?? state.meta.thang;
       const vN = state.ui.ctViewNam   ?? state.meta.nam;
-      if(d.getMonth()+1 !== vT || d.getFullYear() !== vN){
-        state.ui.ctViewThang = d.getMonth()+1;
-        state.ui.ctViewNam   = d.getFullYear();
+      const fmD = financialMonthForDate(d);
+      if(fmD.thang !== vT || fmD.nam !== vN){
+        state.ui.ctViewThang = fmD.thang;
+        state.ui.ctViewNam   = fmD.nam;
       }
     }
     // Ngày vừa ghi luôn được mở sẵn để thấy ngay khoản mình vừa nhập
@@ -3459,8 +3498,10 @@ document.addEventListener('change', e=>{
     let val;
     if(type==='money'){ val = parseMoney(el.value); el.value = formatNumberPlain(val); }
     else if(type==='number'){ val = parseInt(el.value,10) || 0; }
+    else if(type==='checkbox'){ val = el.checked; }
     else { val = el.value; }
     state.meta[field] = val;
+    if(field==='autoCycle' && val) syncCycleToToday();   // bật tự động → về ngay chu kỳ hôm nay
     saveState(); renderAll(); return;
   }
 
@@ -3498,6 +3539,27 @@ document.addEventListener('submit', e=>{
 /* ==========================================================
    INIT
    ========================================================== */
+/* Tự làm mới khi sang ngày/chu kỳ mới: app mở sẵn qua đêm hoặc iPhone bật lại từ nền
+   (PWA) sẽ không còn dừng ở chu kỳ cũ. Không làm mới khi đang gõ dở hay đang mở form. */
+let lastDayKey = todayStr();
+function refreshIfNewDay(){
+  const dayKey = todayStr();
+  const cycleChanged = syncCycleToToday();
+  if(!cycleChanged && dayKey === lastDayKey) return;
+  const ae = document.activeElement;
+  const typing = ae && ae.matches && ae.matches('input, select, textarea');
+  const sheetOpen = document.getElementById('quickAddOverlay').classList.contains('open');
+  if(typing || sheetOpen){ return; }   // thử lại ở lần kiểm tra sau
+  lastDayKey = dayKey;
+  if(cycleChanged) saveState();
+  renderAll({keepScroll:true});
+}
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) refreshIfNewDay(); });
+window.addEventListener('focus', refreshIfNewDay);
+window.addEventListener('pageshow', refreshIfNewDay);
+setInterval(refreshIfNewDay, 60000);
+
+syncCycleToToday();
 renderAll();
 initSupabase();
 </script>
