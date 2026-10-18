@@ -1195,6 +1195,19 @@ const LOAI_MAC_DINH = [
   {loai:'Nhậu', donGia:400000, cheDo:'coDinh', soBuoiCoDinh:3},
 ];
 
+/* Khoản chi KHÔNG thuộc hạng mục ngân sách nào (VD: tiền sửa xe đột xuất, quà biếu...).
+   Vẫn trừ vào số dư thực tế và vẫn hiện trong danh sách/biểu đồ chi tiêu, nhưng không
+   tính vào "Đã chi" của bất kỳ hạng mục nào ở tab Ngân sách nên không làm hạng mục báo "Vượt" oan. */
+const LOAI_NGOAI = 'Ngoài ngân sách';
+function loaiOptionsHtml(){
+  const opts = state.bb.map(b=>b.loai).filter(l=>l!==LOAI_NGOAI)
+    .map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+  return opts + `<option value="${esc(LOAI_NGOAI)}">➕ ${esc(LOAI_NGOAI)} (không tính vào hạng mục)</option>`;
+}
+function tongNgoaiNganSach(thang, nam){
+  return state.ct.reduce((s,r)=> s + ((r.loai===LOAI_NGOAI && inMonth(r.ngay, thang, nam)) ? (Number(r.soTien)||0) : 0), 0);
+}
+
 function uid(){ return 'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 /* Ngày hôm nay theo GIỜ ĐỊA PHƯƠNG. Trước đây dùng toISOString() (UTC) nên ở Việt Nam,
    trước 7h sáng sẽ ra nhầm ngày hôm qua. */
@@ -1915,7 +1928,11 @@ function viewTCCN(){
     <div class="card wide ${coVuotNganSach?'rust':'brass'}">
       <div class="card-label">Đã chi / Ngân sách chu kỳ ${viewThang}/${viewNam}</div>
       <div class="card-value ${coVuotNganSach?'rust':''}">${fmt(t.bbSumXem.sumDaChi)} / ${fmt(t.bbSumXem.soTienTrongThangCan)}</div>
-    </div>` : '';
+    </div>` + (tongNgoaiNganSach(viewThang, viewNam) > 0 ? `
+    <div class="card wide">
+      <div class="card-label">Chi ngoài ngân sách chu kỳ ${viewThang}/${viewNam}</div>
+      <div class="card-value">${fmt(tongNgoaiNganSach(viewThang, viewNam))}</div>
+    </div>` : '') : '';
 
   const cardsBlock = rel===0 || rel<0 ? `
   <div class="cards">
@@ -2063,6 +2080,7 @@ function ymd(d){
 /* Màu ổn định cho từng hạng mục: ưu tiên theo thứ tự trong bảng Ngân sách để màu
    không nhảy lung tung mỗi lần thêm/bớt khoản chi. */
 function catColor(loai){
+  if(loai===LOAI_NGOAI) return '#94A3B8';
   const i = state.bb.findIndex(b=>b.loai===loai);
   if(i>=0) return CHART_COLORS[i % CHART_COLORS.length];
   let h = 0; const s = String(loai||'');
@@ -2284,6 +2302,7 @@ function chartTrend(viewThang, viewNam){
 function chartVsBudget(viewThang, viewNam){
   const rows = computeBBRowsFor(viewThang, viewNam).filter(r=> r.tong>0 || r.daChi>0);
   if(!rows.length) return '';
+  const ngoaiNS = tongNgoaiNganSach(viewThang, viewNam);
   const soVuot = rows.filter(r=>r.conLai<0).length;
 
   const list = rows.sort((a,b)=> (b.daChi/(b.tong||1)) - (a.daChi/(a.tong||1))).map(r=>{
@@ -2311,7 +2330,7 @@ function chartVsBudget(viewThang, viewNam){
       <h3 class="chart-title">Thực chi vs ngân sách</h3>
       <span class="chart-note">${soVuot?`${soVuot} hạng mục vượt`:'chưa vượt hạng mục nào'}</span>
     </div>
-    <p class="chart-sub">Mỗi thanh là phần ngân sách tháng ${viewThang}/${viewNam} đã dùng hết. Thanh đỏ = đã tiêu quá mức đặt ra.</p>
+    <p class="chart-sub">Mỗi thanh là phần ngân sách tháng ${viewThang}/${viewNam} đã dùng hết. Thanh đỏ = đã tiêu quá mức đặt ra.${ngoaiNS>0?` Chưa tính <b>${fmt(ngoaiNS)}</b> chi ngoài ngân sách.`:''}</p>
     <div class="legend">${list}</div>
   </div>`;
 }
@@ -2477,7 +2496,7 @@ function viewCT(){
       <input type="date" name="ngay" value="${todayStr()}" required>
       <input type="text" name="chiTiet" placeholder="Chi tiết (VD: Trà đá)" required>
       <input type="text" inputmode="numeric" data-type="money" name="soTien" placeholder="Số tiền" required>
-      <select name="loai">${loaiOptions.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>
+      <select name="loai">${loaiOptionsHtml()}</select>
       <button type="submit">+ Thêm khoản chi</button>
     </form>`;
 
@@ -3047,8 +3066,7 @@ function normalizeNewRow(arrName, obj){
    ========================================================== */
 function fillQuickAddLoaiOptions(){
   const sel = document.getElementById('qaLoai');
-  const loaiOptions = state.bb.map(b=>b.loai);
-  sel.innerHTML = loaiOptions.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+  sel.innerHTML = loaiOptionsHtml();
 }
 /* editId = null → thêm mới; editId = id → mở đúng khoản đó ra để sửa/xoá.
    Dùng chung một tấm sheet cho cả hai việc: trên điện thoại, gõ vào ô nhỏ xíu trong
